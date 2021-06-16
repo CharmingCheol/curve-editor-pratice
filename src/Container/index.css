@@ -1,0 +1,23 @@
+svg {
+  width: 100vw;
+  height: 100vh;
+  background-color: #282727;
+  /* position: relative;
+  display: flex;
+  flex-direction: column;
+  user-select: none; */
+}
+
+text {
+  color: white;
+  font-size: 1rem;
+}
+
+path {
+  stroke: none;
+}
+
+line {
+  stroke: #303030;
+  transform: translate3d(0, 24px, 0);
+}
