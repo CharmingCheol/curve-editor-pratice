@@ -39,7 +39,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ data }) => {
 
   useEffect(() => {
     const currentRef = divRef.current;
-
     if (currentRef) {
       const { clientWidth, clientHeight } = currentRef;
 
@@ -48,7 +47,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ data }) => {
         .call((g) => g.select("svg").remove())
         .append("svg")
         .attr("class", "wrapper-curve")
-        // .attr('viewBox', `0, 0, ${offsetWidth}, ${offsetHeight}`);
         .attr("preserveAspectRatio", "xMinYMin meet")
         .style("width", "100%")
         .style("height", "100%");
@@ -62,8 +60,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ data }) => {
         .attr("y", 0)
         .attr("width", clientWidth)
         .attr("height", clientHeight);
-      // .attr('width', '100%')
-      // .attr('height', '100%');
 
       const xMax = _.max(
         _.reduce(
@@ -95,7 +91,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ data }) => {
         .domain(yDomaix)
         .nice()
         .range([currentRef.clientHeight - margin.bottom, margin.top]);
-      // .range([height - margin.bottom, margin.top]);
 
       if (zoomTransform) {
         const newXScale = zoomTransform.rescaleX(x);
@@ -112,24 +107,19 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ data }) => {
         y: d3.ScaleLinear<number, number, never>
       ) => {
         const separated = _.split(name, ".");
-        const boneName = separated[0];
         const euler = separated[1];
-
         const lowerCaseEuler = _.lowerCase(euler);
 
         const sliceModuler = (arr: number[], moduler: number) => {
           const result = Array.from(Array(moduler), () => new Array(0));
           _.map(arr, (value, i) => result[i % moduler].push(value));
-
           return result;
         };
 
         switch (lowerCaseEuler) {
           case _.lowerCase(Euler.QUATERNION): {
             const QUOTIENT = 4;
-
             const quaternionList = sliceModuler(item.values, QUOTIENT);
-
             const converted = _.map(quaternionList, (quaternion, i) => {
               return _.map(quaternion, (q, j) => {
                 return {
@@ -160,14 +150,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ data }) => {
                 .attr("stroke-linecap", "round")
                 .attr("d", (data) => lineGenerator(data))
                 .attr("clip-path", "url(#area)");
-
-              // 라벨
-              // element
-              //   .append('text')
-              //   // .attr('transform', 'translate(' + (width - 3) + ',' + y(3) + ')')
-              //   .attr('text-anchor', 'start')
-              //   .style('fill', '#E85757')
-              //   .text(currentName[0] + currentName[1] + 'X');
             };
 
             _.map(converted, (quaternion, i) =>
@@ -235,11 +217,7 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ data }) => {
           [currentRef.clientWidth, currentRef.clientHeight],
         ])
         .filter((e: WheelEvent) => {
-          // zoom을 alt + mousewheel로 변경
-          if (_.isEqual(e.type, "wheel")) {
-            return e.altKey;
-          }
-
+          if (_.isEqual(e.type, "wheel")) return e.altKey;
           return true;
         })
         .on("zoom", (e: d3.D3ZoomEvent<HTMLDivElement, Datum>) => {
@@ -257,7 +235,6 @@ const TimelinePanel: React.FC<TimelinePanelProps> = ({ data }) => {
         .on("end", (e) => {
           console.log("END");
         });
-
       d3.select(currentRef).call(dragBehavior);
       d3.select(currentRef).call(zoomBehavior);
     }

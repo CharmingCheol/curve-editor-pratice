@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
 import "./index.css";
+import hipsPos from "./hipsPos.json";
 
 type d3ScaleLinear = d3.ScaleLinear<number, number, never>;
 type d3SvgSelection = d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -25,11 +26,27 @@ const App = () => {
     const x = d3.scaleLinear().domain([-4.5, 4.5]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
 
+    const posX: number[][] = [];
+    const posY: number[][] = [];
+    const posZ: number[][] = [];
+    for (let index = 0; index < hipsPos.values.length; index += 1) {
+      const remainder = index % 3;
+      const value = hipsPos.values[index];
+      const timeIndex = (index / 3) | 0; // 비트 연산자로 소수 제거
+      const time = hipsPos.times[timeIndex];
+      if (remainder === 0) {
+        posX.push([time * 30, value]);
+      } else if (remainder === 1) {
+        posY.push([time * 30, value]);
+      } else {
+        posZ.push([time * 30, value]);
+      }
+    }
+    console.log(posX);
+    console.log(posY);
+    console.log(posX);
+
     const svg = d3.select(curveEditorRef.current);
-    const g = svg
-      .append("g")
-      .attr("fill", "none")
-      .attr("stroke-linecap", "round");
     const gx = svg.append("g");
     const gy = svg.append("g");
     const zoomBehavior = d3
@@ -50,10 +67,10 @@ const App = () => {
         gy.call(yAxis, transform.rescaleY(y));
 
         //
-        svg.select(".temp").remove();
+        svg.select(".grid-line").remove();
         svg
           .append("g")
-          .attr("class", "temp")
+          .attr("class", "grid-line")
           .call(
             (g, x) =>
               g
@@ -80,6 +97,37 @@ const App = () => {
                 .attr("x2", width - margin.right),
             transform.rescaleY(y)
           );
+
+        const lineGenerator = d3
+          .line()
+          .curve(d3.curveBasis)
+          .x((d) => transform.rescaleX(x)(d[0]))
+          .y((d) => transform.rescaleY(y)(d[1]));
+
+        svg.selectAll(".curve-line").remove();
+        ["red", "green", "blue"].forEach((color, index) => {
+          const className = `curve-line ${
+            index === 0 ? "x" : index === 1 ? "y" : "z"
+          }`;
+          svg
+            .append("g")
+            .attr("class", className)
+            .append("path")
+            .datum(index === 0 ? posX : index === 1 ? posY : posZ)
+            .attr("fill", "none")
+            .attr("stroke", color)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-linejoin", "round")
+            .attr("d", lineGenerator as any);
+          svg
+            .select(`.${index === 0 ? "x" : index === 1 ? "y" : "z"}`)
+            .selectAll("circle")
+            .data(index === 0 ? posX : index === 1 ? posY : posZ)
+            .join("circle")
+            .attr("cx", (d) => transform.rescaleX(x)(d[0]))
+            .attr("cy", (d) => transform.rescaleY(y)(d[1]))
+            .attr("r", 2);
+        });
       });
     svg.call(zoomBehavior as any);
   }, []);

@@ -2,10 +2,6 @@ svg {
   width: 100vw;
   height: 100vh;
   background-color: #282727;
-  /* position: relative;
-  display: flex;
-  flex-direction: column;
-  user-select: none; */
 }
 
 text {
@@ -13,11 +9,11 @@ text {
   font-size: 1rem;
 }
 
-path {
-  stroke: none;
-}
-
 line {
   stroke: #303030;
   transform: translate3d(0, 24px, 0);
+}
+
+.curve-line {
+  transform: translate3d(40px, 0px, 0px);
 }
