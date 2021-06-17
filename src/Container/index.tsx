@@ -20,7 +20,7 @@ const App = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
     const margin = { top: 40, right: 40, bottom: 40, left: 40 };
-    const x = d3.scaleLinear().domain([-4.5, 4.5]).range([margin.left, width]);
+    const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
 
     const posX: number[][] = [];
@@ -43,7 +43,7 @@ const App = () => {
     const setCurvePath = (scaleX: D3ScaleLinear, scaleY: D3ScaleLinear) => {
       return d3
         .line()
-        .curve(d3.curveBasis)
+        .curve(d3.curveMonotoneX)
         .x((d) => scaleX(d[0]))
         .y((d) => scaleY(d[1]));
     };
@@ -111,7 +111,7 @@ const App = () => {
         .selectAll("circle")
         .data(posData)
         .join("circle")
-        .attr("r", 2)
+        .attr("r", 4)
         .attr("cx", (d) => x(d[0]))
         .attr("cy", (d) => y(d[1]));
     });
