@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
 import "./index.css";
-import hipsPos from "./hipsPos.json";
+import hipsPos from "../hipsPos.json";
 
 type d3ScaleLinear = d3.ScaleLinear<number, number, never>;
 type d3SvgSelection = d3.Selection<SVGGElement, unknown, null, undefined>;

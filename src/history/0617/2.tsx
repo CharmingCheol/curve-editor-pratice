@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
-import _ from "lodash";
 import "./index.css";
-import GraphGroup from "./GraphGroup";
-import dummy from "../dummy.json";
+import hipsPos from "../hipsPos.json";
 
 type D3ScaleLinear = d3.ScaleLinear<number, number, never>;
 type D3SvgSelection = d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -13,8 +11,6 @@ interface D3ZoomDatum {
   times: number[];
   values: number[];
 }
-
-const ZOOM_THROTTLE_TIMER = 75;
 
 const App = () => {
   const curveEditorRef = useRef<SVGSVGElement>(null);
@@ -26,6 +22,31 @@ const App = () => {
     const margin = { top: 40, right: 40, bottom: 40, left: 40 };
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
+
+    const posX: number[][] = [];
+    const posY: number[][] = [];
+    const posZ: number[][] = [];
+    for (let index = 0; index < hipsPos.values.length; index += 1) {
+      const remainder = index % 3;
+      const value = hipsPos.values[index];
+      const timeIndex = (index / 3) | 0; // 비트 연산자로 소수 제거
+      const time = hipsPos.times[timeIndex];
+      if (remainder === 0) {
+        posX.push([time * 30, value]);
+      } else if (remainder === 1) {
+        posY.push([time * 30, value]);
+      } else {
+        posZ.push([time * 30, value]);
+      }
+    }
+
+    const setCurvePath = (scaleX: D3ScaleLinear, scaleY: D3ScaleLinear) => {
+      return d3
+        .line()
+        .curve(d3.curveMonotoneX)
+        .x((d) => scaleX(d[0]))
+        .y((d) => scaleY(d[1]));
+    };
 
     const arrangeXAxis = (g: D3SvgSelection, scaleX: D3ScaleLinear) => {
       g.attr("transform", `translate(${margin.left},${margin.top})`)
@@ -71,17 +92,33 @@ const App = () => {
     gridX.call((g) => arrangeGridX(g, x));
     gridY.call((g) => arrangeGridY(g, y));
 
-    const setCurvePath = (scaleX: D3ScaleLinear, scaleY: D3ScaleLinear) => {
-      return d3
-        .line()
-        .curve(d3.curveMonotoneX)
-        .x((d) => scaleX(d[0]))
-        .y((d) => scaleY(d[1]));
-    };
+    ["red", "green", "blue"].forEach((color, index) => {
+      const xyz = index === 0 ? "x" : index === 1 ? "y" : "z";
+      const className = `curve-path ${xyz}`;
+      const posData = index === 0 ? posX : index === 1 ? posY : posZ;
+      svg
+        .append("g")
+        .attr("class", className)
+        .append("path")
+        .datum(posData)
+        .attr("fill", "none")
+        .attr("stroke", color)
+        .attr("stroke-width", 1.5)
+        .attr("stroke-linejoin", "round")
+        .attr("d", setCurvePath(x, y) as any);
+      svg
+        .select(`.${index === 0 ? "x" : index === 1 ? "y" : "z"}`)
+        .selectAll("circle")
+        .data(posData)
+        .join("circle")
+        .attr("r", 4)
+        .attr("cx", (d) => x(d[0]))
+        .attr("cy", (d) => y(d[1]));
+    });
 
-    const zoomBehavior = d3.zoom().on(
-      "zoom",
-      _.throttle((event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
+    const zoomBehavior = d3
+      .zoom()
+      .on("zoom", (event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
         const { transform } = event;
         const rescaleX = transform.rescaleX(x);
         const rescaleY = transform.rescaleY(y);
@@ -91,28 +128,25 @@ const App = () => {
         gridX.call((g) => arrangeGridX(g, rescaleX));
         gridY.call((g) => arrangeGridY(g, rescaleY));
 
-        svg.selectAll(".graph-group path").each(function () {
-          d3.select(this).attr("d", setCurvePath(rescaleX, rescaleY) as any);
+        ["red", "green", "blue"].forEach((color, index) => {
+          const xyz = index === 0 ? "x" : index === 1 ? "y" : "z";
+          const className = `curve-path.${xyz}`;
+          const group = d3.select(`.${className}`);
+          group
+            .select("path")
+            .attr("d", setCurvePath(rescaleX, rescaleY) as any);
+          group.selectAll("circle").each(function () {
+            d3.select(this).attr("cx", (d: any) => rescaleX(d[0]));
+            d3.select(this).attr("cy", (d: any) => rescaleY(d[1]));
+          });
         });
-        svg.selectAll(".graph-group circle").each(function () {
-          d3.select(this).attr("cx", (d: any) => rescaleX(d[0]));
-          d3.select(this).attr("cy", (d: any) => rescaleY(d[1]));
-        });
-      }, ZOOM_THROTTLE_TIMER)
-    );
+      });
     svg.call(zoomBehavior as any);
   }, []);
 
   return (
     <div className="wrapper">
-      <svg ref={curveEditorRef}>
-        {dummy.baseLayer.map((bone) => {
-          const { name, times, values } = bone;
-          return (
-            <GraphGroup key={name} name={name} times={times} values={values} />
-          );
-        })}
-      </svg>
+      <svg ref={curveEditorRef} />
     </div>
   );
 };
