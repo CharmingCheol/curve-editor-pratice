@@ -16,7 +16,6 @@ const GraphItem: FunctionComponent<Props> = ({ datum, color }) => {
     const margin = { top: 40, right: 40, bottom: 40, left: 40 };
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
-
     d3.select(pathRef.current)
       .datum(datum)
       .attr(
@@ -27,19 +26,13 @@ const GraphItem: FunctionComponent<Props> = ({ datum, color }) => {
           .x((d) => x(d[0]))
           .y((d) => y(d[1])) as any
       );
-
-    // d3.select(pathRef.current.parentElement)
-    //   .selectAll("path")
-    //   .data(datum)
-    //   .join("path");
-
-    // d3.select(pathRef.current.parentElement)
-    //   .selectAll("circle")
-    //   .data(datum)
-    //   .join("circle")
-    //   .attr("r", 4)
-    //   .attr("cx", (d) => x(d[0]))
-    //   .attr("cy", (d) => y(d[1]));
+    d3.select(pathRef.current.parentElement)
+      .selectAll("circle")
+      .data(datum)
+      .join("circle")
+      .attr("r", 4)
+      .attr("cx", (d) => x(d[0]))
+      .attr("cy", (d) => y(d[1]));
   }, [datum]);
 
   return (
