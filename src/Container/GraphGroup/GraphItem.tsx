@@ -29,15 +29,10 @@ const GraphItem: FunctionComponent<Props> = ({ datum, color }) => {
       );
 
     // d3.select(pathRef.current.parentElement)
-    //   .selectAll("path")
-    //   .data(datum)
-    //   .join("path");
-
-    // d3.select(pathRef.current.parentElement)
     //   .selectAll("circle")
     //   .data(datum)
     //   .join("circle")
-    //   .attr("r", 4)
+    //   .attr("r", 2)
     //   .attr("cx", (d) => x(d[0]))
     //   .attr("cy", (d) => y(d[1]));
   }, [datum]);

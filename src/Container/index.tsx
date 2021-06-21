@@ -71,13 +71,6 @@ const App = () => {
     gridX.call((g) => arrangeGridX(g, x));
     gridY.call((g) => arrangeGridY(g, y));
 
-    const setCurvePath = (scaleX: D3ScaleLinear, scaleY: D3ScaleLinear) => {
-      return d3
-        .line()
-        .x((d) => scaleX(d[0]))
-        .y((d) => scaleY(d[1]));
-    };
-
     const zoomBehavior = d3.zoom().on(
       "zoom",
       _.throttle((event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
@@ -90,18 +83,15 @@ const App = () => {
         gridX.call((g) => arrangeGridX(g, rescaleX));
         gridY.call((g) => arrangeGridY(g, rescaleY));
 
+        const scale = transform.k;
+        const transformX = transform.x + margin.left;
+        const transformY = transform.y + margin.top;
         const graphWrapper = d3.select(".graph-group-wrapper");
-        graphWrapper.attr("transform", transform as any);
+        graphWrapper.attr(
+          "transform",
+          `translate(${transformX},${transformY}) scale(${scale})`
+        );
         graphWrapper.attr("stroke-width", 1 / transform.k);
-
-        // svg.selectAll(".graph-group path").each(function () {
-        //   d3.select(this).attr("d", setCurvePath(rescaleX, rescaleY) as any);
-        // });
-
-        // svg.selectAll(".graph-group circle").each(function () {
-        //   d3.select(this).attr("cx", (d: any) => rescaleX(d[0]));
-        //   d3.select(this).attr("cy", (d: any) => rescaleY(d[1]));
-        // });
       }, ZOOM_THROTTLE_TIMER)
     );
     svg.call(zoomBehavior as any);
