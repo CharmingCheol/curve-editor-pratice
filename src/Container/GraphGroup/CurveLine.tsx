@@ -2,11 +2,11 @@ import React, { memo, useEffect, useRef, FunctionComponent } from "react";
 import * as d3 from "d3";
 
 interface Props {
-  datum: number[][];
   color: string;
+  datum: number[][];
 }
 
-const GraphItem: FunctionComponent<Props> = ({ datum, color }) => {
+const CurveLine: FunctionComponent<Props> = ({ color, datum }) => {
   const pathRef = useRef<SVGPathElement>(null);
 
   useEffect(() => {
@@ -27,28 +27,17 @@ const GraphItem: FunctionComponent<Props> = ({ datum, color }) => {
           .x((d) => x(d[0]))
           .y((d) => y(d[1])) as any
       );
-
-    d3.select(pathRef.current.parentElement)
-      .selectAll("circle")
-      .data(datum)
-      .join("circle")
-      .attr("class", "none")
-      .attr("r", 2)
-      .attr("cx", (d) => x(d[0]))
-      .attr("cy", (d) => y(d[1]));
   }, [datum]);
 
   return (
-    <g>
-      <path
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        ref={pathRef}
-      />
-    </g>
+    <path
+      fill="none"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+      ref={pathRef}
+    />
   );
 };
 
-export default memo(GraphItem);
+export default memo(CurveLine);
