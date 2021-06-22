@@ -1,5 +1,4 @@
-import React, { Fragment, useMemo, useRef, FunctionComponent } from "react";
-import GraphItem from "./GraphItem";
+import React, { useMemo, Fragment, FunctionComponent } from "react";
 import CurveLine from "./CurveLine";
 import Keyframes from "./Keyframes";
 
@@ -7,14 +6,14 @@ interface Props {
   name: string;
   times: number[];
   values: number[];
-  test: boolean;
+  areRemovedKeyframes: boolean;
 }
 
 const GraphGroup: FunctionComponent<Props> = ({
   name,
   times,
   values,
-  test,
+  areRemovedKeyframes,
 }) => {
   const [x, y, z] = useMemo(() => {
     const x: number[][] = [];
@@ -44,36 +43,11 @@ const GraphGroup: FunctionComponent<Props> = ({
             datum={value}
             color={index === 0 ? "red" : index === 1 ? "green" : "blue"}
           />
-          <Keyframes datum={value} test={test} />
-          {/* {test && <Keyframes datum={value} />} */}
+          {areRemovedKeyframes && <Keyframes datum={value} />}
         </g>
       ))}
     </Fragment>
   );
-
-  // return (
-  //   <Fragment>
-  //     {[x, y, z].map((value, index) => (
-  //       <GraphItem
-  //         key={`${name}_${index}`}
-  //         datum={value}
-  //         color={index === 0 ? "red" : index === 1 ? "green" : "blue"}
-  //       />
-  //     ))}
-  //   </Fragment>
-  // );
-
-  // return (
-  //   <g className="graph-group">
-  //     {[x, y, z].map((value, index) => (
-  //       <GraphItem
-  //         key={`${name}_${index}`}
-  //         datum={value}
-  //         color={index === 0 ? "red" : index === 1 ? "green" : "blue"}
-  //       />
-  //     ))}
-  //   </g>
-  // );
 };
 
 export default GraphGroup;

@@ -3,10 +3,9 @@ import * as d3 from "d3";
 
 interface Props {
   datum: number[][];
-  test: boolean;
 }
 
-const Keyframes: FunctionComponent<Props> = ({ datum, test }) => {
+const Keyframes: FunctionComponent<Props> = ({ datum }) => {
   const groupRef = useRef<SVGGElement>(null);
 
   useEffect(() => {
@@ -25,21 +24,21 @@ const Keyframes: FunctionComponent<Props> = ({ datum, test }) => {
       .attr("cy", (d) => y(d[1]));
   }, [datum]);
 
-  useEffect(() => {
-    if (test) {
-      const observerOptions: IntersectionObserverInit = {
-        // root: document.getElementById("graph-group-wrapper"),
-        root: document.querySelector("svg"),
-      };
-      const intersectionObserver = new IntersectionObserver(
-        ([entry], observer) => {
-          console.log(entry.isIntersecting);
-        },
-        observerOptions
-      );
-      intersectionObserver.observe(groupRef.current as Element);
-    }
-  });
+  // useEffect(() => {
+  //   if (test) {
+  //     const observerOptions: IntersectionObserverInit = {
+  //       // root: document.getElementById("graph-group-wrapper"),
+  //       root: document.querySelector("svg"),
+  //     };
+  //     const intersectionObserver = new IntersectionObserver(
+  //       ([entry], observer) => {
+  //         console.log(entry.isIntersecting);
+  //       },
+  //       observerOptions
+  //     );
+  //     intersectionObserver.observe(groupRef.current as Element);
+  //   }
+  // });
 
   return <g ref={groupRef} />;
 };

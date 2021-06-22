@@ -17,9 +17,9 @@ interface D3ZoomDatum {
 const ZOOM_THROTTLE_TIMER = 100;
 
 const App = () => {
+  const [areRemovedKeyframes, setAreRemovedKeyframes] = useState(true);
   const curveEditorRef = useRef<SVGSVGElement>(null);
   const rafID = useRef(0);
-  const [test, setTest] = useState(false);
 
   useEffect(() => {
     if (!curveEditorRef.current) return;
@@ -93,9 +93,7 @@ const App = () => {
     const zoomBehavior = d3
       .zoom()
       .on("start", () => {
-        const graphWrapper = document.getElementById("graph-group-wrapper");
-        graphWrapper?.classList.toggle("none");
-        setTest(false);
+        setAreRemovedKeyframes(false);
       })
       .on(
         "zoom",
@@ -105,9 +103,7 @@ const App = () => {
         }, ZOOM_THROTTLE_TIMER)
       )
       .on("end", () => {
-        const graphWrapper = document.getElementById("graph-group-wrapper");
-        graphWrapper?.classList.toggle("none");
-        setTest(true);
+        setAreRemovedKeyframes(true);
         cancelAnimationFrame(rafID.current);
       });
     svg.call(zoomBehavior as any);
@@ -127,7 +123,7 @@ const App = () => {
                   name={name}
                   times={times}
                   values={values}
-                  test={test}
+                  areRemovedKeyframes={areRemovedKeyframes}
                 />
               );
             })}

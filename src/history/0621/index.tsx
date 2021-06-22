@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import _ from "lodash";
 import "./index.css";
 import GraphGroup from "./GraphGroup";
-import dummy from "../dummy.json";
+import dummy from "../../dummy.json";
 
 type D3ScaleLinear = d3.ScaleLinear<number, number, never>;
 type D3SvgSelection = d3.Selection<SVGGElement, unknown, null, undefined>;
