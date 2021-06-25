@@ -1,6 +1,6 @@
 import React, { useMemo, Fragment, FunctionComponent } from "react";
 import CurveLine from "./CurveLine";
-import Keyframes from "./Keyframes";
+import KeyframeGroup from "./KeyframeGroup";
 
 interface Props {
   name: string;
@@ -31,13 +31,14 @@ const GraphGroup: FunctionComponent<Props> = ({ name, times, values }) => {
 
   return (
     <Fragment>
-      {[x, y, z].map((value, index) => (
+      {[x, y, z].map((datum, index) => (
         <g key={`${name}_${index}`}>
           <CurveLine
-            datum={value}
+            datum={datum}
             color={index === 0 ? "red" : index === 1 ? "green" : "blue"}
+            trackName={name}
           />
-          <Keyframes datum={value} />
+          <KeyframeGroup datum={datum} trackName={name} xyzIndex={index} />
         </g>
       ))}
     </Fragment>

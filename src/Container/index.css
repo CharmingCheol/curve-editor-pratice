@@ -4,15 +4,15 @@ svg {
   background-color: #282727;
 }
 
-.domain {
+path.domain {
   display: none;
 }
 
-.x-axis {
+g.x-axis {
   transform: translate3d(40px, 40px, 0px);
 }
 
-.y-axis {
+g.y-axis {
   transform: translate3d(0px, 40px, 0px);
 }
 
