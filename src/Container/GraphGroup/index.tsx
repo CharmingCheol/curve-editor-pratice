@@ -37,6 +37,7 @@ const GraphGroup: FunctionComponent<Props> = ({ name, times, values }) => {
             datum={datum}
             color={index === 0 ? "red" : index === 1 ? "green" : "blue"}
             trackName={name}
+            xyzIndex={index}
           />
           <KeyframeGroup datum={datum} trackName={name} xyzIndex={index} />
         </g>
