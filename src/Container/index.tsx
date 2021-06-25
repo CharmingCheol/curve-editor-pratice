@@ -24,7 +24,6 @@ const App = () => {
   const yAxisRef = useRef<SVGGElement>(null);
   const xGridRef = useRef<SVGGElement>(null);
   const yGridRef = useRef<SVGGElement>(null);
-  const rafID = useRef(0);
 
   useEffect(() => {
     if (
@@ -95,21 +94,14 @@ const App = () => {
       if (graphWrapper) {
         graphWrapper.style.cssText = `transform:${translate3d} scale(${scale}); ${strokeWidth}`;
       }
-      rafID.current = requestAnimationFrame(() => updateScreen(event));
     };
 
-    const zoomBehavior = d3
-      .zoom()
-      .on(
-        "zoom",
-        _.throttle((event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
-          updateScreen(event);
-          cancelAnimationFrame(rafID.current);
-        }, ZOOM_THROTTLE_TIMER)
-      )
-      .on("end", () => {
-        cancelAnimationFrame(rafID.current);
-      });
+    const zoomBehavior = d3.zoom().on(
+      "zoom",
+      _.throttle((event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
+        updateScreen(event);
+      }, ZOOM_THROTTLE_TIMER)
+    );
 
     xAxis.call((g) => arrangeXAxis(g, x));
     yAxis.call((g) => arrangeYAxis(g, y));

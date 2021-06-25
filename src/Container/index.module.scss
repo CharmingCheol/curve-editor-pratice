@@ -9,10 +9,6 @@
     position: absolute;
   }
 
-  path {
-    display: none;
-  }
-
   text {
     color: white;
     font-size: 1rem;
@@ -26,8 +22,14 @@
 
 .x-axis {
   transform: translate3d(40px, 40px, 0px);
+  path {
+    display: none;
+  }
 }
 
 .y-axis {
   transform: translate3d(0px, 40px, 0px);
+  path {
+    display: none;
+  }
 }
