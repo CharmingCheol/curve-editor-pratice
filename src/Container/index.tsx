@@ -1,9 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
 import _ from "lodash";
-import "./index.css";
 import GraphGroup from "./GraphGroup";
 import dummy from "../dummy.json";
+import classNames from "classnames/bind";
+import styles from "./index.module.scss";
+
+const cx = classNames.bind(styles);
+const ZOOM_THROTTLE_TIMER = 100;
 
 type D3ScaleLinear = d3.ScaleLinear<number, number, never>;
 type D3SvgGElement = d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -13,8 +17,6 @@ interface D3ZoomDatum {
   times: number[];
   values: number[];
 }
-
-const ZOOM_THROTTLE_TIMER = 100;
 
 const App = () => {
   const curveEditorRef = useRef<SVGSVGElement>(null);
@@ -117,11 +119,11 @@ const App = () => {
   }, []);
 
   return (
-    <div className="wrapper">
+    <div className={cx("wrapper")}>
       <svg ref={curveEditorRef}>
-        <g ref={xAxisRef} className="x-axis" />
-        <g ref={yAxisRef} className="y-axis" />
-        <g className="grid-line">
+        <g ref={xAxisRef} className={cx("x-axis")} />
+        <g ref={yAxisRef} className={cx("y-axis")} />
+        <g>
           <g ref={xGridRef} />
           <g ref={yGridRef} />
         </g>
