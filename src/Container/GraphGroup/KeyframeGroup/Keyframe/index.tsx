@@ -31,6 +31,7 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
   // 키프레임 클릭
   const handleClickKeyframe = useCallback(
     (event: React.MouseEvent) => {
+      console.log("click");
       const clickedTarget: ClickedTarget = {
         type: "keyframe",
         trackName,
@@ -81,11 +82,23 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
     }
   }, [clickedTarget, data, trackName, xyz]);
 
+  // const handleMouseDown = useCallback((event) => {
+  //   event.preventDefault();
+  //   console.log("mouseDown");
+  // }, []);
+
+  // const handleMouseUp = useCallback((event) => {
+  //   event.preventDefault();
+  //   console.log("mouseUp");
+  // }, []);
+
   return (
     <circle
       ref={circleRef}
       className={cx({ "mouse-in": mouseIn, clicked })}
       r={2}
+      // onMouseDown={handleMouseDown}
+      // onMouseMove={handleMouseUp}
       onClick={handleClickKeyframe}
       onMouseEnter={handleMouseEvent}
       onMouseOut={handleMouseEvent}

@@ -96,12 +96,20 @@ const App = () => {
       }
     };
 
-    const zoomBehavior = d3.zoom().on(
-      "zoom",
-      _.throttle((event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
-        updateScreen(event);
-      }, ZOOM_THROTTLE_TIMER)
-    );
+    const zoomBehavior = d3
+      .zoom()
+      .filter((event) => {
+        const { tagName } = event.path[0];
+        const preventTagName = tagName === "circle" || tagName === "line";
+        if (event.type === "mousedown" && preventTagName) return false;
+        return true;
+      })
+      .on(
+        "zoom",
+        _.throttle((event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
+          updateScreen(event);
+        }, ZOOM_THROTTLE_TIMER)
+      );
 
     xAxis.call((g) => arrangeXAxis(g, x));
     yAxis.call((g) => arrangeYAxis(g, y));
