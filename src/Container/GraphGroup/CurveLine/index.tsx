@@ -24,12 +24,8 @@ interface Props {
   xyzIndex: number;
 }
 
-const CurveLine: FunctionComponent<Props> = ({
-  color,
-  datum,
-  trackName,
-  xyzIndex,
-}) => {
+const CurveLine: FunctionComponent<Props> = (props) => {
+  const { color, datum, trackName, xyzIndex } = props;
   const dispatch = useDispatch();
   const [mouseIn, setMouseIn] = useState(false);
   const [clicked, setClicked] = useState(false);
@@ -92,6 +88,15 @@ const CurveLine: FunctionComponent<Props> = ({
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
     if (!clickedTarget) return;
+    if (
+      clickedTarget.ctrl &&
+      clickedTarget.type === "keyframe" &&
+      clickedTarget.trackName === trackName &&
+      clickedTarget.xyz === xyz
+    ) {
+      return setClicked(true);
+    }
+    if (clickedTarget.ctrl) return;
     if (clickedTarget.trackName === trackName && clickedTarget.xyz === xyz) {
       return setClicked(true);
     }

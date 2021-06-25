@@ -67,6 +67,10 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
     if (!clickedTarget) return;
+    if (clickedTarget.ctrl) return;
+    if (clickedTarget.alt && clickedTarget.coordinates?.x === data[0]) {
+      return setClicked(true);
+    }
     if (
       clickedTarget.trackName !== trackName ||
       clickedTarget.xyz !== xyz ||
