@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as curveEditor from "actions/curveEditor";
 import { ClickedTarget, XYZ } from "types/curveEditor";
+import { fnGetBinarySearch } from "utils";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
 
@@ -31,6 +32,9 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   const [clicked, setClicked] = useState(false);
   const pathRef = useRef<SVGPathElement>(null);
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
+  const times = useMemo(() => {
+    return datum.map((data) => data[0]);
+  }, [datum]);
 
   const xyz = useMemo<XYZ>(() => {
     if (xyzIndex === 0) {
@@ -97,13 +101,20 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       return setClicked(true);
     }
     if (clickedTarget.ctrl) return;
+    if (clickedTarget.alt && clickedTarget.coordinates) {
+      const timeIndex = fnGetBinarySearch({
+        collection: times,
+        index: clickedTarget.coordinates.x,
+      });
+      if (timeIndex !== -1) return setClicked(true);
+    }
     if (clickedTarget.trackName === trackName && clickedTarget.xyz === xyz) {
       return setClicked(true);
     }
     if (clickedTarget.trackName !== trackName || clickedTarget.xyz !== xyz) {
       return setClicked(false);
     }
-  }, [clickedTarget, trackName, xyz]);
+  }, [clickedTarget, times, trackName, xyz]);
 
   return (
     <path
