@@ -5,6 +5,7 @@ import GraphGroup from "./GraphGroup";
 import dummy from "../dummy.json";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
+import Test from "./test";
 
 const cx = classNames.bind(styles);
 const ZOOM_THROTTLE_TIMER = 100;
@@ -39,6 +40,8 @@ const App = () => {
     const margin = { top: 40, right: 40, bottom: 40, left: 40 };
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
+
+    Test.setScale(x, y);
 
     const svg = d3.select(curveEditorRef.current);
     const xAxis = d3.select(xAxisRef.current);
@@ -78,6 +81,8 @@ const App = () => {
       const { transform } = event;
       const rescaleX = transform.rescaleX(x);
       const rescaleY = transform.rescaleY(y);
+
+      Test.setScale(rescaleX, rescaleY);
 
       xAxis.call((g) => arrangeXAxis(g, rescaleX));
       yAxis.call((g) => arrangeYAxis(g, rescaleY));

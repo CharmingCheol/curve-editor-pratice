@@ -12,6 +12,7 @@ import * as curveEditor from "actions/curveEditor";
 import { ClickedTarget, XYZ } from "types/curveEditor";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
+import Test from "Container/test";
 
 const cx = classNames.bind(styles);
 
@@ -31,7 +32,27 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
   // 키프레임 클릭
   const handleClickKeyframe = useCallback(
     (event: React.MouseEvent) => {
-      console.log("click");
+      const a = Test.xScale;
+      const b = Test.yScale;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const margin = { top: 40, right: 40, bottom: 40, left: 40 };
+      const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
+      const y = d3
+        .scaleLinear()
+        .domain([-4.5, 4.5])
+        .range([height, margin.top]);
+      if (a && b) {
+        console.log(
+          data,
+          a(data[0]),
+          b(data[1]),
+          x(data[0]),
+          y(data[1]),
+          event.clientX - 40,
+          event.clientY - 40
+        );
+      }
       const clickedTarget: ClickedTarget = {
         type: "keyframe",
         trackName,
@@ -62,6 +83,12 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
     const margin = { top: 40, right: 40, bottom: 40, left: 40 };
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
+
+    // const dd = new Test();
+    // const a = dd.xScale;
+    // console.log(a);
+    const a = Test.xScale;
+    const b = Test.yScale;
     d3.select(circleRef.current).attr("cx", x(data[0])).attr("cy", y(data[1]));
   }, [data]);
 
@@ -82,23 +109,36 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
     }
   }, [clickedTarget, data, trackName, xyz]);
 
-  // const handleMouseDown = useCallback((event) => {
-  //   event.preventDefault();
-  //   console.log("mouseDown");
-  // }, []);
+  const handleMouseMove = useCallback((event) => {
+    console.log("mouseMove", event);
+  }, []);
 
-  // const handleMouseUp = useCallback((event) => {
-  //   event.preventDefault();
-  //   console.log("mouseUp");
-  // }, []);
+  const handleMouseUp = useCallback(() => {
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+  }, [handleMouseMove]);
+
+  const handleMouseDown = useCallback(() => {
+    if (!clicked) return;
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }, [clicked, handleMouseMove, handleMouseUp]);
+
+  useEffect(() => {
+    const circle = circleRef.current;
+    if (circle) {
+      circle.addEventListener("mousedown", handleMouseDown);
+      return () => {
+        circle.removeEventListener("mousedown", handleMouseDown);
+      };
+    }
+  }, [handleMouseDown]);
 
   return (
     <circle
       ref={circleRef}
       className={cx({ "mouse-in": mouseIn, clicked })}
       r={2}
-      // onMouseDown={handleMouseDown}
-      // onMouseMove={handleMouseUp}
       onClick={handleClickKeyframe}
       onMouseEnter={handleMouseEvent}
       onMouseOut={handleMouseEvent}
