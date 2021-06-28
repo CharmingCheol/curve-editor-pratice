@@ -9,6 +9,7 @@ interface ChangeClickedTarget {
 
 export const CHANGE_CLICKED_TARGET =
   "curveEditor/CHANGE_CLICKED_TARGET" as const;
+
 export const changeClickedTarget = (params: ChangeClickedTarget) => ({
   type: CHANGE_CLICKED_TARGET,
   payload: {

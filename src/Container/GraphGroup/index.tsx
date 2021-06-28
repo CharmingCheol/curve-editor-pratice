@@ -1,4 +1,10 @@
-import React, { useMemo, Fragment, FunctionComponent } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  Fragment,
+  FunctionComponent,
+} from "react";
 import CurveLine from "./CurveLine";
 import KeyframeGroup from "./KeyframeGroup";
 
@@ -29,6 +35,12 @@ const GraphGroup: FunctionComponent<Props> = ({ name, times, values }) => {
     return [x, y, z];
   }, [times, values]);
 
+  const [test, setTest] = useState([0, 0]);
+
+  const testCallback = useCallback(([x, y]: [number, number]) => {
+    setTest([x, y]);
+  }, []);
+
   return (
     <Fragment>
       {[x, y, z].map((datum, index) => (
@@ -39,7 +51,12 @@ const GraphGroup: FunctionComponent<Props> = ({ name, times, values }) => {
             trackName={name}
             xyzIndex={index}
           />
-          <KeyframeGroup datum={datum} trackName={name} xyzIndex={index} />
+          <KeyframeGroup
+            datum={datum}
+            trackName={name}
+            xyzIndex={index}
+            testCallback={testCallback}
+          />
         </g>
       ))}
     </Fragment>

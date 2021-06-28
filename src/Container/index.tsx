@@ -5,7 +5,6 @@ import GraphGroup from "./GraphGroup";
 import dummy from "../dummy.json";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
-import Test from "./test";
 
 const cx = classNames.bind(styles);
 const ZOOM_THROTTLE_TIMER = 100;
@@ -41,8 +40,6 @@ const App = () => {
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
 
-    Test.setScale(x, y);
-
     const svg = d3.select(curveEditorRef.current);
     const xAxis = d3.select(xAxisRef.current);
     const yAxis = d3.select(yAxisRef.current);
@@ -77,12 +74,15 @@ const App = () => {
         .attr("x2", width - margin.right);
     };
 
+    xAxis.call((g) => arrangeXAxis(g, x));
+    yAxis.call((g) => arrangeYAxis(g, y));
+    xGrid.call((g) => arrangeXGrid(g, x));
+    yGrid.call((g) => arrangeYGrid(g, y));
+
     const updateScreen = (event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
       const { transform } = event;
       const rescaleX = transform.rescaleX(x);
       const rescaleY = transform.rescaleY(y);
-
-      Test.setScale(rescaleX, rescaleY);
 
       xAxis.call((g) => arrangeXAxis(g, rescaleX));
       yAxis.call((g) => arrangeYAxis(g, rescaleY));
@@ -101,25 +101,12 @@ const App = () => {
       }
     };
 
-    const zoomBehavior = d3
-      .zoom()
-      .filter((event) => {
-        const { tagName } = event.path[0];
-        const preventTagName = tagName === "circle" || tagName === "line";
-        if (event.type === "mousedown" && preventTagName) return false;
-        return true;
-      })
-      .on(
-        "zoom",
-        _.throttle((event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
-          updateScreen(event);
-        }, ZOOM_THROTTLE_TIMER)
-      );
-
-    xAxis.call((g) => arrangeXAxis(g, x));
-    yAxis.call((g) => arrangeYAxis(g, y));
-    xGrid.call((g) => arrangeXGrid(g, x));
-    yGrid.call((g) => arrangeYGrid(g, y));
+    const zoomBehavior = d3.zoom().on(
+      "zoom",
+      _.throttle((event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
+        updateScreen(event);
+      }, ZOOM_THROTTLE_TIMER)
+    );
     svg.call(zoomBehavior as any);
   }, []);
 

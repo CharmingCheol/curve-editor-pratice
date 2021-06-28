@@ -1,4 +1,5 @@
 import React, {
+  memo,
   useCallback,
   useEffect,
   useRef,
@@ -12,7 +13,6 @@ import * as curveEditor from "actions/curveEditor";
 import { ClickedTarget, XYZ } from "types/curveEditor";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
-import Test from "Container/test";
 
 const cx = classNames.bind(styles);
 
@@ -20,9 +20,12 @@ interface Props {
   data: number[];
   trackName: string;
   xyz: XYZ;
+  testCallback: ([x, y]: [number, number]) => void;
 }
 
-const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
+const Keyframe: FunctionComponent<Props> = (props) => {
+  const { data, trackName, xyz, testCallback } = props;
+
   const circleRef = useRef<SVGCircleElement>(null);
   const [mouseIn, setMouseIn] = useState(false);
   const [clicked, setClicked] = useState(false);
@@ -32,27 +35,6 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
   // 키프레임 클릭
   const handleClickKeyframe = useCallback(
     (event: React.MouseEvent) => {
-      const a = Test.xScale;
-      const b = Test.yScale;
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const margin = { top: 40, right: 40, bottom: 40, left: 40 };
-      const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
-      const y = d3
-        .scaleLinear()
-        .domain([-4.5, 4.5])
-        .range([height, margin.top]);
-      if (a && b) {
-        console.log(
-          data,
-          a(data[0]),
-          b(data[1]),
-          x(data[0]),
-          y(data[1]),
-          event.clientX - 40,
-          event.clientY - 40
-        );
-      }
       const clickedTarget: ClickedTarget = {
         type: "keyframe",
         trackName,
@@ -61,6 +43,7 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
         alt: event.altKey,
         coordinates: { x: data[0], y: data[1] },
       };
+      circleRef.current?.setAttribute("data-clicked", "clicked");
       dispatch(
         curveEditor.changeClickedTarget({
           clickedTarget,
@@ -71,8 +54,8 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
     [data, dispatch, trackName, xyz]
   );
 
-  // curve line 마우스 이벤트 적용
-  const handleMouseEvent = useCallback(() => {
+  // 키프레임 cursor in/out
+  const handleCursorInOut = useCallback(() => {
     setMouseIn((prev) => !prev);
   }, []);
 
@@ -83,20 +66,65 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
     const margin = { top: 40, right: 40, bottom: 40, left: 40 };
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
-
-    // const dd = new Test();
-    // const a = dd.xScale;
-    // console.log(a);
-    const a = Test.xScale;
-    const b = Test.yScale;
     d3.select(circleRef.current).attr("cx", x(data[0])).attr("cy", y(data[1]));
-  }, [data]);
+  }, [testCallback, data]);
+
+  // 키프레임 드래그 앤 드랍
+  useEffect(() => {
+    const width = window.innerWidth;
+    const margin = { top: 40, right: 40, bottom: 40, left: 40 };
+    const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
+
+    let prevCursorX = 0;
+    let prevCursorY = 0;
+
+    const setCursorX = (cursorX: number) => {
+      const invertCursorX = Math.round(x.invert(cursorX));
+      return x(invertCursorX) | 0;
+    };
+
+    const start = (event: any) => {
+      prevCursorX = setCursorX(event.x);
+      prevCursorY = event.y;
+    };
+
+    const drag = (event: any) => {
+      const cursorX = setCursorX(event.x);
+      const cursorY = event.y;
+      const differX = prevCursorX - cursorX;
+      const differY = prevCursorY - cursorY;
+
+      const selector = "circle[data-clicked=clicked]";
+      const clickedCircles = document.querySelectorAll(selector);
+      clickedCircles.forEach((circle) => {
+        const circleX = parseInt(circle.getAttribute("cx") as string, 10);
+        const circleY = parseFloat(circle.getAttribute("cy") as string);
+        circle.setAttribute("cx", `${circleX - differX}`);
+        circle.setAttribute("cy", `${circleY - differY}`);
+      });
+
+      prevCursorX = cursorX;
+      prevCursorY = cursorY;
+    };
+
+    const end = (event: any) => {
+      console.log("end", event);
+    };
+
+    const dragBehavior = d3
+      .drag()
+      .on("start", start)
+      .on("drag", drag)
+      .on("end", end);
+    d3.select(circleRef.current).call(dragBehavior as any);
+  }, []);
 
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
     if (!clickedTarget) return;
     if (clickedTarget.ctrl) return;
     if (clickedTarget.alt && clickedTarget.coordinates?.x === data[0]) {
+      circleRef.current?.setAttribute("data-clicked", "clicked");
       return setClicked(true);
     }
     if (
@@ -105,34 +133,10 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
       clickedTarget.coordinates?.x !== data[0] ||
       clickedTarget.coordinates?.y !== data[1]
     ) {
+      circleRef.current?.removeAttribute("data-clicked");
       return setClicked(false);
     }
   }, [clickedTarget, data, trackName, xyz]);
-
-  const handleMouseMove = useCallback((event) => {
-    console.log("mouseMove", event);
-  }, []);
-
-  const handleMouseUp = useCallback(() => {
-    document.removeEventListener("mousemove", handleMouseMove);
-    document.removeEventListener("mouseup", handleMouseUp);
-  }, [handleMouseMove]);
-
-  const handleMouseDown = useCallback(() => {
-    if (!clicked) return;
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  }, [clicked, handleMouseMove, handleMouseUp]);
-
-  useEffect(() => {
-    const circle = circleRef.current;
-    if (circle) {
-      circle.addEventListener("mousedown", handleMouseDown);
-      return () => {
-        circle.removeEventListener("mousedown", handleMouseDown);
-      };
-    }
-  }, [handleMouseDown]);
 
   return (
     <circle
@@ -140,10 +144,10 @@ const Keyframe: FunctionComponent<Props> = ({ data, trackName, xyz }) => {
       className={cx({ "mouse-in": mouseIn, clicked })}
       r={2}
       onClick={handleClickKeyframe}
-      onMouseEnter={handleMouseEvent}
-      onMouseOut={handleMouseEvent}
+      onMouseEnter={handleCursorInOut}
+      onMouseOut={handleCursorInOut}
     />
   );
 };
 
-export default Keyframe;
+export default memo(Keyframe);
