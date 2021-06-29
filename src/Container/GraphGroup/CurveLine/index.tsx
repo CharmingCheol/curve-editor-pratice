@@ -23,15 +23,17 @@ interface Props {
   datum: number[][];
   trackName: string;
   xyzIndex: number;
+  lineIndex: number;
 }
 
 const CurveLine: FunctionComponent<Props> = (props) => {
-  const { color, datum, trackName, xyzIndex } = props;
+  const { color, datum, trackName, xyzIndex, lineIndex } = props;
   const dispatch = useDispatch();
   const [mouseIn, setMouseIn] = useState(false);
   const [clicked, setClicked] = useState(false);
   const pathRef = useRef<SVGPathElement>(null);
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
+
   const times = useMemo(() => {
     return datum.map((data) => data[0]);
   }, [datum]);
@@ -98,6 +100,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       clickedTarget.trackName === trackName &&
       clickedTarget.xyz === xyz
     ) {
+      pathRef.current?.setAttribute("data-clicked", "clicked");
       return setClicked(true);
     }
     if (clickedTarget.ctrl) return;
@@ -106,12 +109,17 @@ const CurveLine: FunctionComponent<Props> = (props) => {
         collection: times,
         index: clickedTarget.coordinates.x,
       });
-      if (timeIndex !== -1) return setClicked(true);
+      if (timeIndex !== -1) {
+        pathRef.current?.setAttribute("data-clicked", "clicked");
+        return setClicked(true);
+      }
     }
     if (clickedTarget.trackName === trackName && clickedTarget.xyz === xyz) {
+      pathRef.current?.setAttribute("data-clicked", "clicked");
       return setClicked(true);
     }
     if (clickedTarget.trackName !== trackName || clickedTarget.xyz !== xyz) {
+      pathRef.current?.removeAttribute("data-clicked");
       return setClicked(false);
     }
   }, [clickedTarget, times, trackName, xyz]);
@@ -125,6 +133,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       onClick={handleClickCurveLine}
       onMouseEnter={handleMouseEvent}
       onMouseOut={handleMouseEvent}
+      data-lineindex={lineIndex}
     />
   );
 };

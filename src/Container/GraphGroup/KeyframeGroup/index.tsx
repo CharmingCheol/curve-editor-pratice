@@ -6,11 +6,11 @@ interface Props {
   datum: number[][];
   trackName: string;
   xyzIndex: number;
-  testCallback: ([x, y]: [number, number]) => void;
+  lineIndex: number;
 }
 
 const KeyframeGroup: FunctionComponent<Props> = (props) => {
-  const { datum, trackName, xyzIndex, testCallback } = props;
+  const { datum, trackName, xyzIndex, lineIndex } = props;
 
   const xyz = useMemo<XYZ>(() => {
     if (xyzIndex === 0) {
@@ -28,9 +28,10 @@ const KeyframeGroup: FunctionComponent<Props> = (props) => {
         <Keyframe
           key={`${trackName}_${index}`}
           data={data}
+          keyframeIndex={index}
+          lineIndex={lineIndex}
           trackName={trackName}
           xyz={xyz}
-          testCallback={testCallback}
         />
       ))}
     </g>

@@ -9,23 +9,36 @@ import React, {
 import * as d3 from "d3";
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
+import _ from "lodash";
 import * as curveEditor from "actions/curveEditor";
 import { ClickedTarget, XYZ } from "types/curveEditor";
+import { fnGetBinarySearch } from "utils";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
 
 const cx = classNames.bind(styles);
 
+interface KeyframeDatum {
+  keyframeIndex: number;
+  timeIndex: number;
+  y: number;
+}
+
+interface SelectedKeyframes {
+  lineIndex: number;
+  datum: KeyframeDatum[];
+}
+
 interface Props {
   data: number[];
   trackName: string;
   xyz: XYZ;
-  testCallback: ([x, y]: [number, number]) => void;
+  keyframeIndex: number;
+  lineIndex: number;
 }
 
 const Keyframe: FunctionComponent<Props> = (props) => {
-  const { data, trackName, xyz, testCallback } = props;
-
+  const { data, keyframeIndex, lineIndex, trackName, xyz } = props;
   const circleRef = useRef<SVGCircleElement>(null);
   const [mouseIn, setMouseIn] = useState(false);
   const [clicked, setClicked] = useState(false);
@@ -59,63 +72,118 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     setMouseIn((prev) => !prev);
   }, []);
 
-  // 키프레임 위치 조정
+  // 최초 키프레임 위치 지정
   useEffect(() => {
     const width = window.innerWidth;
     const height = window.innerHeight;
-    const margin = { top: 40, right: 40, bottom: 40, left: 40 };
+    const margin = { top: 40, right: 40, bottom: 40, left: 42 };
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
-    d3.select(circleRef.current).attr("cx", x(data[0])).attr("cy", y(data[1]));
-  }, [testCallback, data]);
+    d3.select(circleRef.current)
+      .attr("cx", x(data[0]) | 0)
+      .attr("cy", y(data[1]));
+  }, [data]);
 
   // 키프레임 드래그 앤 드랍
   useEffect(() => {
     const width = window.innerWidth;
-    const margin = { top: 40, right: 40, bottom: 40, left: 40 };
+    const height = window.innerHeight;
+    const margin = { top: 40, right: 40, bottom: 40, left: 42 };
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
+    const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
+    const svg = document.querySelector("svg") as SVGSVGElement;
 
     let prevCursorX = 0;
     let prevCursorY = 0;
 
-    const setCursorX = (cursorX: number) => {
-      const invertCursorX = Math.round(x.invert(cursorX));
-      return x(invertCursorX) | 0;
+    const setTimeIndex = (circleX: number) => {
+      return Math.round(x.invert(circleX));
     };
 
-    const start = (event: any) => {
+    const setCursorX = (cursorX: number) => {
+      const timeIndex = setTimeIndex(cursorX);
+      return x(timeIndex) | 0;
+    };
+
+    const handleDragStart = (event: any) => {
       prevCursorX = setCursorX(event.x);
       prevCursorY = event.y;
     };
 
-    const drag = (event: any) => {
+    const handleDragging = (event: any) => {
       const cursorX = setCursorX(event.x);
       const cursorY = event.y;
       const differX = prevCursorX - cursorX;
       const differY = prevCursorY - cursorY;
+      const clickedKeyframesData: SelectedKeyframes[] = [];
 
-      const selector = "circle[data-clicked=clicked]";
-      const clickedCircles = document.querySelectorAll(selector);
-      clickedCircles.forEach((circle) => {
+      const circleSelector = "circle[data-clicked=clicked]";
+      const circles = svg.querySelectorAll(circleSelector);
+      circles.forEach((circle) => {
         const circleX = parseInt(circle.getAttribute("cx") as string, 10);
         const circleY = parseFloat(circle.getAttribute("cy") as string);
+        const lineIndex = circle.getAttribute("data-lineindex") as string;
+        const keyframeIndex = circle.getAttribute("data-keyframeindex");
+
+        const binaryIndex = fnGetBinarySearch({
+          collection: clickedKeyframesData,
+          index: lineIndex,
+          key: "lineIndex",
+        });
+        const datum = {
+          keyframeIndex: parseInt(keyframeIndex as string, 10),
+          timeIndex: setTimeIndex(circleX),
+          y: y.invert(circleY),
+        };
+        if (binaryIndex === -1) {
+          clickedKeyframesData.push({
+            lineIndex: parseInt(lineIndex, 10),
+            datum: [datum],
+          });
+        } else {
+          clickedKeyframesData[binaryIndex].datum.push(datum);
+        }
         circle.setAttribute("cx", `${circleX - differX}`);
         circle.setAttribute("cy", `${circleY - differY}`);
+      });
+
+      const curveLineSelector = "path[data-clicked=clicked]";
+      const curveLines = svg.querySelectorAll(curveLineSelector);
+      curveLines.forEach((element) => {
+        if (!clickedKeyframesData.length) return;
+        const curveLine = d3.select(element);
+        const lineGenerator = d3
+          .line()
+          .curve(d3.curveMonotoneX)
+          .x((d) => x(d[0]))
+          .y((d) => y(d[1]));
+        const curveLinedatum = curveLine.datum() as number[][];
+        const lineIndex = element.getAttribute("data-lineindex") as string;
+        const binaryIndex = fnGetBinarySearch({
+          collection: clickedKeyframesData,
+          index: lineIndex,
+          key: "lineIndex",
+        });
+        clickedKeyframesData[binaryIndex].datum.forEach((data) => {
+          curveLinedatum[data.keyframeIndex] = [data.timeIndex, data.y];
+        });
+        curveLine.datum(curveLinedatum).attr("d", lineGenerator as any);
       });
 
       prevCursorX = cursorX;
       prevCursorY = cursorY;
     };
 
-    const end = (event: any) => {
-      console.log("end", event);
-    };
+    const handleDragEnd = (event: any) => {};
 
     const dragBehavior = d3
       .drag()
-      .on("start", start)
-      .on("drag", drag)
-      .on("end", end);
+      .on("start", handleDragStart)
+      .on(
+        "drag",
+        _.throttle((event) => handleDragging(event), 50)
+      )
+      .on("end", handleDragEnd);
     d3.select(circleRef.current).call(dragBehavior as any);
   }, []);
 
@@ -146,6 +214,8 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       onClick={handleClickKeyframe}
       onMouseEnter={handleCursorInOut}
       onMouseOut={handleCursorInOut}
+      data-lineindex={lineIndex}
+      data-keyframeindex={keyframeIndex}
     />
   );
 };

@@ -120,7 +120,7 @@ const App = () => {
           <g ref={yGridRef} />
         </g>
         <g id="graph-group-wrapper">
-          {dummy.baseLayer.slice(0, 12).map((bone) => {
+          {dummy.baseLayer.slice(0, 12).map((bone, lineIndex) => {
             const { name, times, values } = bone;
             return (
               <GraphGroup
@@ -128,6 +128,7 @@ const App = () => {
                 name={name}
                 times={times}
                 values={values}
+                lineIndex={lineIndex}
               />
             );
           })}

@@ -1,6 +1,6 @@
 interface FnGetBinarySearch {
   collection: any[];
-  index: number;
+  index: number | string;
   key?: string;
 }
 
@@ -19,6 +19,15 @@ function fnGetBinarySearch({ collection, index, key }: FnGetBinarySearch) {
   const size = collection.length;
   let left = 0;
   let right = size - 1;
+
+  if (typeof index === "string") {
+    try {
+      index = parseInt(index, 10);
+    } catch {
+      return -1;
+    }
+  }
+
   if (key) {
     while (left <= right) {
       const mid = Math.floor((left + right) / 2);

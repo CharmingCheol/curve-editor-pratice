@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useMemo,
-  useState,
-  Fragment,
-  FunctionComponent,
-} from "react";
+import React, { useMemo, Fragment, FunctionComponent } from "react";
 import CurveLine from "./CurveLine";
 import KeyframeGroup from "./KeyframeGroup";
 
@@ -12,9 +6,11 @@ interface Props {
   name: string;
   times: number[];
   values: number[];
+  lineIndex: number;
 }
 
-const GraphGroup: FunctionComponent<Props> = ({ name, times, values }) => {
+const GraphGroup: FunctionComponent<Props> = (props) => {
+  const { name, times, values, lineIndex } = props;
   const [x, y, z] = useMemo(() => {
     const x: number[][] = [];
     const y: number[][] = [];
@@ -35,11 +31,9 @@ const GraphGroup: FunctionComponent<Props> = ({ name, times, values }) => {
     return [x, y, z];
   }, [times, values]);
 
-  const [test, setTest] = useState([0, 0]);
-
-  const testCallback = useCallback(([x, y]: [number, number]) => {
-    setTest([x, y]);
-  }, []);
+  const xyzIndexGroup = useMemo(() => {
+    return [lineIndex * 3 + 1, lineIndex * 3 + 2, lineIndex * 3 + 3];
+  }, [lineIndex]);
 
   return (
     <Fragment>
@@ -50,12 +44,13 @@ const GraphGroup: FunctionComponent<Props> = ({ name, times, values }) => {
             color={index === 0 ? "red" : index === 1 ? "green" : "blue"}
             trackName={name}
             xyzIndex={index}
+            lineIndex={xyzIndexGroup[index]}
           />
           <KeyframeGroup
             datum={datum}
             trackName={name}
             xyzIndex={index}
-            testCallback={testCallback}
+            lineIndex={xyzIndexGroup[index]}
           />
         </g>
       ))}
