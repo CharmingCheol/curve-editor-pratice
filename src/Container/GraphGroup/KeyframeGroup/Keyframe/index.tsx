@@ -91,39 +91,53 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     const margin = { top: 40, right: 40, bottom: 40, left: 42 };
     const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
     const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
-    const svg = document.querySelector("svg") as SVGSVGElement;
+
+    const elementId = "graph-group-wrapper";
+    const graphGroup = document.getElementById(elementId) as HTMLElement;
 
     let prevCursorX = 0;
     let prevCursorY = 0;
 
-    const setTimeIndex = (circleX: number) => {
+    // 현재 cursorXY를 prevCursorXY에 저장
+    const setPrevCursor = (x: number, y: number) => {
+      prevCursorX = x;
+      prevCursorY = y;
+    };
+
+    // cursorX 기준으로 현재 time index 계산
+    const getTimeIndex = (circleX: number) => {
       return Math.round(x.invert(circleX));
     };
 
-    const setCursorX = (cursorX: number) => {
-      const timeIndex = setTimeIndex(cursorX);
-      return x(timeIndex) | 0;
-    };
-
-    const handleDragStart = (event: any) => {
-      prevCursorX = setCursorX(event.x);
-      prevCursorY = event.y;
-    };
-
-    const handleDragging = (event: any) => {
-      const cursorX = setCursorX(event.x);
+    // 현재 커서의 xy 계산
+    const getCursorXY = (event: any) => {
+      const timeIndex = getTimeIndex(event.x);
+      const cursorX = x(timeIndex) | 0;
       const cursorY = event.y;
+      return [cursorX, cursorY];
+    };
+
+    // 드래그 이벤트 시작
+    const handleDragStart = (event: any) => {
+      const [cursorX, cursorY] = getCursorXY(event);
+      setPrevCursor(cursorX, cursorY);
+    };
+
+    // 드래그 시 키프레임 위치 업데이트
+    const updateKeyframes = (event: any) => {
+      const [cursorX, cursorY] = getCursorXY(event);
       const differX = prevCursorX - cursorX;
       const differY = prevCursorY - cursorY;
       const clickedKeyframesData: SelectedKeyframes[] = [];
 
       const circleSelector = "circle[data-clicked=clicked]";
-      const circles = svg.querySelectorAll(circleSelector);
-      circles.forEach((circle) => {
-        const circleX = parseInt(circle.getAttribute("cx") as string, 10);
-        const circleY = parseFloat(circle.getAttribute("cy") as string);
-        const lineIndex = circle.getAttribute("data-lineindex") as string;
-        const keyframeIndex = circle.getAttribute("data-keyframeindex");
+      const circles = graphGroup.querySelectorAll(circleSelector);
+      circles.forEach((element) => {
+        const circle = d3.select(element);
+        const circleY = parseFloat(circle.attr("cy"));
+        const circleX = parseInt(circle.attr("cx"), 10);
+        const lineIndex = parseInt(circle.attr("data-lineindex"), 10);
+        const keyframeIndex = parseInt(circle.attr("data-keyframeindex"), 10);
 
         const binaryIndex = fnGetBinarySearch({
           collection: clickedKeyframesData,
@@ -131,26 +145,31 @@ const Keyframe: FunctionComponent<Props> = (props) => {
           key: "lineIndex",
         });
         const datum = {
-          keyframeIndex: parseInt(keyframeIndex as string, 10),
-          timeIndex: setTimeIndex(circleX),
+          keyframeIndex: keyframeIndex,
+          timeIndex: getTimeIndex(circleX),
           y: y.invert(circleY),
         };
         if (binaryIndex === -1) {
           clickedKeyframesData.push({
-            lineIndex: parseInt(lineIndex, 10),
+            lineIndex: lineIndex,
             datum: [datum],
           });
         } else {
           clickedKeyframesData[binaryIndex].datum.push(datum);
         }
-        circle.setAttribute("cx", `${circleX - differX}`);
-        circle.setAttribute("cy", `${circleY - differY}`);
+        circle.attr("cx", `${circleX - differX}`);
+        circle.attr("cy", `${circleY - differY}`);
       });
 
+      return clickedKeyframesData;
+    };
+
+    // 키프레임 시 커브라인 위치 업데이트
+    const updateCurveLines = (keyframesData: SelectedKeyframes[]) => {
+      if (!keyframesData.length) return;
       const curveLineSelector = "path[data-clicked=clicked]";
-      const curveLines = svg.querySelectorAll(curveLineSelector);
+      const curveLines = graphGroup.querySelectorAll(curveLineSelector);
       curveLines.forEach((element) => {
-        if (!clickedKeyframesData.length) return;
         const curveLine = d3.select(element);
         const lineGenerator = d3
           .line()
@@ -158,30 +177,37 @@ const Keyframe: FunctionComponent<Props> = (props) => {
           .x((d) => x(d[0]))
           .y((d) => y(d[1]));
         const curveLinedatum = curveLine.datum() as number[][];
-        const lineIndex = element.getAttribute("data-lineindex") as string;
+        const lineIndex = parseInt(curveLine.attr("data-lineindex"), 10);
         const binaryIndex = fnGetBinarySearch({
-          collection: clickedKeyframesData,
+          collection: keyframesData,
           index: lineIndex,
           key: "lineIndex",
         });
-        clickedKeyframesData[binaryIndex].datum.forEach((data) => {
+        keyframesData[binaryIndex].datum.forEach((data) => {
           curveLinedatum[data.keyframeIndex] = [data.timeIndex, data.y];
         });
         curveLine.datum(curveLinedatum).attr("d", lineGenerator as any);
       });
-
-      prevCursorX = cursorX;
-      prevCursorY = cursorY;
     };
 
+    // 드래그 이벤트 진행 중
+    const handleDragging = (event: any) => {
+      const [cursorX, cursorY] = getCursorXY(event);
+      const clickedKeyframesData = updateKeyframes(event);
+      updateCurveLines(clickedKeyframesData);
+      setPrevCursor(cursorX, cursorY);
+    };
+
+    // 드래그 이벤트 종료
     const handleDragEnd = (event: any) => {};
 
+    // 드래그 이벤트 세팅
     const dragBehavior = d3
       .drag()
       .on("start", handleDragStart)
       .on(
         "drag",
-        _.throttle((event) => handleDragging(event), 50)
+        _.throttle((event) => handleDragging(event), 20)
       )
       .on("end", handleDragEnd);
     d3.select(circleRef.current).call(dragBehavior as any);
