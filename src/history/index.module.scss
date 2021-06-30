@@ -1,0 +1,36 @@
+.wrapper {
+  svg {
+    width: 100vw;
+    height: 100vh;
+    background-color: #282727;
+  }
+
+  #graph-group-wrapper {
+    position: absolute;
+  }
+
+  text {
+    color: white;
+    font-size: 1rem;
+    user-select: none;
+  }
+
+  line {
+    stroke: #303030;
+    transform: translate3d(0, 24px, 0);
+  }
+}
+
+.x-axis {
+  transform: translate3d(40px, 40px, 0px);
+  path {
+    display: none;
+  }
+}
+
+.y-axis {
+  transform: translate3d(0px, 40px, 0px);
+  path {
+    display: none;
+  }
+}
