@@ -1,5 +1,6 @@
 import { ClickedTarget } from "types/curveEditor";
 import { CurveEditorAction } from "actions/curveEditor";
+import Observer from "Container/observer";
 
 interface CurveEditorState {
   clickedTarget: ClickedTarget | null;
@@ -15,6 +16,7 @@ export const curveEditor = (
 ) => {
   switch (action.type) {
     case "curveEditor/CHANGE_CLICKED_TARGET": {
+      Observer.clearObservers();
       return Object.assign({}, state, {
         clickedTarget: action.payload.clickedTarget,
       });

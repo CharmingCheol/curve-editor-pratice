@@ -15,12 +15,25 @@ import { ClickedTarget, XYZ } from "types/curveEditor";
 import { fnGetBinarySearch } from "utils";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
+import Scale from "Container/scale";
+import Observer from "Container/observer";
 
 const cx = classNames.bind(styles);
 
+interface KeyframeDatum {
+  keyframeIndex: number;
+  timeIndex: number;
+  y: number;
+}
+
+interface ClasifiedKeyframes {
+  lineIndex: number;
+  datum: KeyframeDatum[];
+}
+
 interface Props {
   color: string;
-  datum: number[][];
+  datum: [number, number][];
   trackName: string;
   xyzIndex: number;
   lineIndex: number;
@@ -28,10 +41,15 @@ interface Props {
 
 const CurveLine: FunctionComponent<Props> = (props) => {
   const { color, datum, trackName, xyzIndex, lineIndex } = props;
-  const dispatch = useDispatch();
+  const pathRef = useRef<SVGPathElement>(null);
+  const isAlreadyClicked = useRef(false);
+  const lineData = useRef(datum);
+
+  const [renderingCount, setRenderingCount] = useState(0);
   const [mouseIn, setMouseIn] = useState(false);
   const [clicked, setClicked] = useState(false);
-  const pathRef = useRef<SVGPathElement>(null);
+
+  const dispatch = useDispatch();
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
 
   const times = useMemo(() => {
@@ -68,74 +86,95 @@ const CurveLine: FunctionComponent<Props> = (props) => {
           clickedTarget,
         })
       );
-      setClicked(true);
     },
     [dispatch, trackName, xyz]
   );
 
-  // d3로 path에다가 curve line 그리기
-  useEffect(() => {
-    if (!pathRef.current) return;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const margin = { top: 40, right: 40, bottom: 40, left: 40 };
-    const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
-    const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
-    const curveLine = d3
-      .line()
-      .curve(d3.curveMonotoneX)
-      .x((d) => x(d[0]))
-      .y((d) => y(d[1]));
-    d3.select(pathRef.current)
-      .datum(datum)
-      .attr("d", curveLine as any);
-  }, [datum]);
+  // 커브라인 옵저버 호출
+  const callCurveLineObserver = useCallback(() => {
+    Observer.addCurveLineObserver({
+      curveLineNotify: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
+        const binaryIndex = fnGetBinarySearch({
+          collection: clasifiedKeyframes,
+          index: lineIndex,
+          key: "lineIndex",
+        });
+        clasifiedKeyframes[binaryIndex].datum.forEach((data) => {
+          lineData.current[data.keyframeIndex] = [data.timeIndex, data.y];
+        });
+        setRenderingCount((prev) => prev + 1);
+      },
+    });
+  }, [lineIndex]);
 
-  // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
+  // 커브라인 clicked state 변경
   useEffect(() => {
     if (!clickedTarget) return;
-    if (
-      clickedTarget.ctrl &&
+    const isClickedMe =
+      clickedTarget.type === "curveLine" &&
+      clickedTarget.trackName === trackName &&
+      clickedTarget.xyz === xyz;
+    const isClickedKeyframe =
       clickedTarget.type === "keyframe" &&
       clickedTarget.trackName === trackName &&
-      clickedTarget.xyz === xyz
-    ) {
-      pathRef.current?.setAttribute("data-clicked", "clicked");
-      return setClicked(true);
-    }
-    if (clickedTarget.ctrl) return;
-    if (clickedTarget.alt && clickedTarget.coordinates) {
-      const timeIndex = fnGetBinarySearch({
+      clickedTarget.xyz === xyz;
+    if (clickedTarget.ctrl) {
+      if (isClickedKeyframe || isAlreadyClicked.current) {
+        isAlreadyClicked.current = true;
+        callCurveLineObserver();
+        setClicked(true);
+      }
+    } else if (isClickedMe || isClickedKeyframe) {
+      isAlreadyClicked.current = true;
+      callCurveLineObserver();
+      setClicked(true);
+    } else if (clickedTarget.alt && clickedTarget.coordinates) {
+      const binaryIndex = fnGetBinarySearch({
         collection: times,
         index: clickedTarget.coordinates.x,
       });
-      if (timeIndex !== -1) {
-        pathRef.current?.setAttribute("data-clicked", "clicked");
-        return setClicked(true);
+      if (binaryIndex !== -1) {
+        isAlreadyClicked.current = true;
+        callCurveLineObserver();
+        setClicked(true);
       }
+    } else {
+      isAlreadyClicked.current = false;
+      setClicked(false);
     }
-    if (clickedTarget.trackName === trackName && clickedTarget.xyz === xyz) {
-      pathRef.current?.setAttribute("data-clicked", "clicked");
-      return setClicked(true);
-    }
-    if (clickedTarget.trackName !== trackName || clickedTarget.xyz !== xyz) {
-      pathRef.current?.removeAttribute("data-clicked");
-      return setClicked(false);
-    }
-  }, [clickedTarget, times, trackName, xyz]);
+  }, [callCurveLineObserver, clickedTarget, lineIndex, times, trackName, xyz]);
 
-  return (
-    <path
-      className={cx({ "mouse-in": mouseIn, clicked })}
-      fill="none"
-      stroke={color}
-      ref={pathRef}
-      onClick={handleClickCurveLine}
-      onMouseEnter={handleMouseEvent}
-      onMouseOut={handleMouseEvent}
-      data-lineindex={lineIndex}
-    />
-  );
+  const Path = useMemo(() => {
+    const lineGenerator = d3
+      .line()
+      .curve(d3.curveMonotoneX)
+      .x((d) => Scale.xScale(d[0]))
+      .y((d) => Scale.yScale(d[1]));
+    const regExp = /(\.\d{4})\d+/g;
+    const pathShapes = lineGenerator(lineData.current)?.replace(regExp, "$1");
+    return (
+      <path
+        className={cx({ "mouse-in": mouseIn, clicked })}
+        fill="none"
+        stroke={color}
+        d={pathShapes as string}
+        ref={pathRef}
+        onClick={handleClickCurveLine}
+        onMouseEnter={handleMouseEvent}
+        onMouseOut={handleMouseEvent}
+      />
+    );
+  }, [
+    clicked,
+    color,
+    renderingCount,
+    handleClickCurveLine,
+    handleMouseEvent,
+    lineIndex,
+    mouseIn,
+  ]);
+
+  return Path;
 };
 
 export default memo(CurveLine);

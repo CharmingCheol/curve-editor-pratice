@@ -40,7 +40,7 @@ const GraphGroup: FunctionComponent<Props> = (props) => {
       {[x, y, z].map((datum, index) => (
         <g key={`${name}_${index}`}>
           <CurveLine
-            datum={datum}
+            datum={datum as [number, number][]}
             color={index === 0 ? "red" : index === 1 ? "green" : "blue"}
             trackName={name}
             xyzIndex={index}

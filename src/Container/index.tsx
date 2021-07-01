@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import _ from "lodash";
 import GraphGroup from "./GraphGroup";
 import dummy from "../dummy.json";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
+import Scale from "./scale";
 
 const cx = classNames.bind(styles);
 const ZOOM_THROTTLE_TIMER = 100;
@@ -24,6 +25,7 @@ const App = () => {
   const yAxisRef = useRef<SVGGElement>(null);
   const xGridRef = useRef<SVGGElement>(null);
   const yGridRef = useRef<SVGGElement>(null);
+  const [isEmpty, setIsEmpty] = useState(false);
 
   useEffect(() => {
     if (
@@ -36,9 +38,11 @@ const App = () => {
       return;
     const width = window.innerWidth;
     const height = window.innerHeight;
-    const margin = { top: 40, right: 40, bottom: 40, left: 40 };
-    const x = d3.scaleLinear().domain([-10, 10]).range([margin.left, width]);
-    const y = d3.scaleLinear().domain([-4.5, 4.5]).range([height, margin.top]);
+
+    Scale.setScale(width, height);
+    const margin = Scale.scaleMargin;
+    const x = Scale.xScale;
+    const y = Scale.yScale;
 
     const svg = d3.select(curveEditorRef.current);
     const xAxis = d3.select(xAxisRef.current);
@@ -108,6 +112,7 @@ const App = () => {
       }, ZOOM_THROTTLE_TIMER)
     );
     svg.call(zoomBehavior as any);
+    setIsEmpty(true);
   }, []);
 
   return (
@@ -120,18 +125,19 @@ const App = () => {
           <g ref={yGridRef} />
         </g>
         <g id="graph-group-wrapper">
-          {dummy.baseLayer.slice(0, 12).map((bone, lineIndex) => {
-            const { name, times, values } = bone;
-            return (
-              <GraphGroup
-                key={name}
-                name={name}
-                times={times}
-                values={values}
-                lineIndex={lineIndex}
-              />
-            );
-          })}
+          {isEmpty &&
+            dummy.baseLayer.slice(0, 12).map((bone, lineIndex) => {
+              const { name, times, values } = bone;
+              return (
+                <GraphGroup
+                  key={name}
+                  name={name}
+                  times={times}
+                  values={values}
+                  lineIndex={lineIndex}
+                />
+              );
+            })}
         </g>
       </svg>
     </div>
