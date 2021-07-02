@@ -52,10 +52,6 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   const dispatch = useDispatch();
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
 
-  const times = useMemo(() => {
-    return datum.map((data) => data[0]);
-  }, [datum]);
-
   const xyz = useMemo<XYZ>(() => {
     if (xyzIndex === 0) {
       return "x";
@@ -131,6 +127,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       callCurveLineObserver();
       setClicked(true);
     } else if (clickedTarget.alt && clickedTarget.coordinates) {
+      const times = lineData.current.map((data) => data[0]);
       const binaryIndex = fnGetBinarySearch({
         collection: times,
         index: clickedTarget.coordinates.x,
@@ -144,7 +141,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       isAlreadyClicked.current = false;
       setClicked(false);
     }
-  }, [callCurveLineObserver, clickedTarget, lineIndex, times, trackName, xyz]);
+  }, [callCurveLineObserver, clickedTarget, lineIndex, trackName, xyz]);
 
   const Path = useMemo(() => {
     const lineGenerator = d3
