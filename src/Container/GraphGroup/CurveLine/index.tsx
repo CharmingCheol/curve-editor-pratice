@@ -99,10 +99,12 @@ const CurveLine: FunctionComponent<Props> = (props) => {
           index: lineIndex,
           key: "lineIndex",
         });
-        clasifiedKeyframes[binaryIndex].datum.forEach((data) => {
-          lineData.current[data.keyframeIndex] = [data.timeIndex, data.y];
-        });
-        setRenderingCount((prev) => prev + 1);
+        if (binaryIndex !== -1) {
+          clasifiedKeyframes[binaryIndex].datum.forEach((data) => {
+            lineData.current[data.keyframeIndex] = [data.timeIndex, data.y];
+          });
+          setRenderingCount((prev) => prev + 1);
+        }
       },
     });
   }, [lineIndex]);
