@@ -44,6 +44,8 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   // 키프레임 클릭
   const handleClickKeyframe = useCallback(
     (event: React.MouseEvent) => {
+      console.log("click");
+      event.preventDefault();
       const { timeIndex, y } = circlePosition.current;
       const clickedTarget: ClickedTarget = {
         type: "keyframe",
@@ -67,11 +69,13 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     setMouseIn((prev) => !prev);
   }, []);
 
+  const dragged = useRef(false);
   // 키프레임 드래그 이벤트
   useEffect(() => {
     const x = Scale.xScale;
     let prevCursorX = 0;
     let prevCursorY = 0;
+    // let dragged = false;
 
     // 현재 cursorXY를 prevCursorXY에 저장
     const setPrevCursor = (x: number, y: number) => {
@@ -100,11 +104,17 @@ const Keyframe: FunctionComponent<Props> = (props) => {
 
     // 드래그 이벤트 진행
     const handleDragging = (event: any) => {
+      if (!dragged.current) dragged.current = true; // drag가 시작되면 dragged를 fasle -> true로 변경
       const [cursorX, cursorY] = getCursorXY(event);
       const cursorGapX = prevCursorX - cursorX; // 직전 커서 x좌표 - 현재 커서 x좌표
       const cursorGapY = prevCursorY - cursorY; // 직전 커서 y좌표 - 현재 커서 y좌표
       Observer.notifyObservers({ cursorGapX, cursorGapY });
       setPrevCursor(cursorX, cursorY);
+    };
+
+    const handleDragEnd = (event: any) => {
+      if (!dragged.current) return; // dragged가 false라면(drag를 하지 않았다면) return을 시켜서 함수 종료
+      dragged.current = false;
     };
 
     // 드래그 이벤트 세팅
@@ -114,7 +124,8 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       .on(
         "drag",
         _.throttle((event) => handleDragging(event), 50)
-      );
+      )
+      .on("end", handleDragEnd);
     d3.select(circleRef.current).call(dragBehavior as any);
   }, []);
 
@@ -173,6 +184,18 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     xyz,
   ]);
 
+  // const handleDragStart = useCallback(() => {
+  //   console.log("start");
+  // }, []);
+
+  // const handleDrag = useCallback(() => {
+  //   console.log("drag");
+  // }, []);
+
+  // const handleDragEnd = useCallback(() => {
+  //   console.log("end");
+  // }, []);
+
   const Circle = useMemo(() => {
     const { timeIndex, y } = circlePosition.current;
     const circleX = Scale.xScale(timeIndex) | 0;
@@ -187,9 +210,20 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         onClick={handleClickKeyframe}
         onMouseEnter={handleCursorInOut}
         onMouseOut={handleCursorInOut}
+        // onDragStart={handleDragStart}
+        // onDrag={handleDrag}
+        // onDragEnd={handleDragEnd}
       />
     );
-  }, [clicked, handleClickKeyframe, handleCursorInOut, renderingCount]);
+  }, [
+    clicked,
+    handleClickKeyframe,
+    handleCursorInOut,
+    // handleDrag,
+    // handleDragEnd,
+    // handleDragStart,
+    renderingCount,
+  ]);
 
   return Circle;
 };
