@@ -17,7 +17,7 @@ interface ClickedKeyframes extends KeyframeDatum {
 
 interface ClasifiedKeyframes {
   lineIndex: number;
-  datum: KeyframeDatum[];
+  keyframeDatum: KeyframeDatum[];
 }
 
 interface ObserverParams {
@@ -67,10 +67,10 @@ class Observer {
       if (binaryIndex === -1) {
         clasifiedKeyframes.push({
           lineIndex: lineIndex,
-          datum: [datum],
+          keyframeDatum: [datum],
         });
       } else {
-        clasifiedKeyframes[binaryIndex].datum.push(datum);
+        clasifiedKeyframes[binaryIndex].keyframeDatum.push(datum);
       }
     }
     if (clasifiedKeyframes.length) {

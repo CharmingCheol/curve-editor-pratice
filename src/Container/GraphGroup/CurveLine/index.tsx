@@ -28,7 +28,7 @@ interface KeyframeDatum {
 
 interface ClasifiedKeyframes {
   lineIndex: number;
-  datum: KeyframeDatum[];
+  keyframeDatum: KeyframeDatum[];
 }
 
 interface Props {
@@ -39,11 +39,15 @@ interface Props {
   lineIndex: number;
 }
 
+type LineData = [number, number, number]; // [timeIndex, y, keyframeIndex]
+
 const CurveLine: FunctionComponent<Props> = (props) => {
   const { color, datum, trackName, xyzIndex, lineIndex } = props;
   const pathRef = useRef<SVGPathElement>(null);
   const isAlreadyClicked = useRef(false);
-  const lineData = useRef(datum);
+  const lineData = useRef<LineData[]>(
+    datum.map((data, index) => [data[0], data[1], index]) // [timeIndex, y, keyframeIndex]
+  );
 
   const [renderingCount, setRenderingCount] = useState(0);
   const [mouseIn, setMouseIn] = useState(false);
@@ -96,9 +100,17 @@ const CurveLine: FunctionComponent<Props> = (props) => {
           key: "lineIndex",
         });
         if (binaryIndex !== -1) {
-          clasifiedKeyframes[binaryIndex].datum.forEach((data) => {
-            lineData.current[data.keyframeIndex] = [data.timeIndex, data.y];
+          clasifiedKeyframes[binaryIndex].keyframeDatum.forEach((data) => {
+            const keyframeIndex = lineData.current.findIndex(
+              (line) => line[2] === data.keyframeIndex // line[2] : keyframeIndex
+            );
+            lineData.current[keyframeIndex] = [
+              data.timeIndex,
+              data.y,
+              data.keyframeIndex,
+            ];
           });
+          lineData.current.sort((a: LineData, b: LineData) => a[0] - b[0]); // time index순으로 정렬
           setRenderingCount((prev) => prev + 1);
         }
       },
@@ -149,14 +161,18 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       .curve(d3.curveMonotoneX)
       .x((d) => Scale.xScale(d[0]))
       .y((d) => Scale.yScale(d[1]));
-    const regExp = /(\.\d{4})\d+/g;
-    const pathShapes = lineGenerator(lineData.current)?.replace(regExp, "$1");
+    const filteredLineData = lineData.current.map((data) => [
+      data[0],
+      data[1],
+    ]) as [number, number][];
+    // const regExp = /(\.\d{4})\d+/g;
+    // const pathShapes = lineGenerator(filteredLineData)?.replace(regExp, "$1");
     return (
       <path
         className={cx({ "mouse-in": mouseIn, clicked })}
         fill="none"
         stroke={color}
-        d={pathShapes as string}
+        d={lineGenerator(filteredLineData) as string}
         ref={pathRef}
         onClick={handleClickCurveLine}
         onMouseEnter={handleMouseEvent}
@@ -169,7 +185,6 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     renderingCount,
     handleClickCurveLine,
     handleMouseEvent,
-    lineIndex,
     mouseIn,
   ]);
 
