@@ -1,23 +1,14 @@
 import { fnGetBinarySearch } from "utils";
+import { KeyframeDatum, ClasifiedKeyframes } from "types/curveEditor";
 
 interface CursorGap {
   cursorGapX: number;
   cursorGapY: number;
 }
 
-interface KeyframeDatum {
-  keyframeIndex: number;
-  timeIndex: number;
-  y: number;
-}
-
 interface ClickedKeyframes extends KeyframeDatum {
   lineIndex: number;
-}
-
-interface ClasifiedKeyframes {
-  lineIndex: number;
-  keyframeDatum: KeyframeDatum[];
+  trackName: string;
 }
 
 interface ObserverParams {
@@ -46,19 +37,14 @@ class Observer {
   }
 
   // 옵저버 호출
-  static notifyObservers(content: CursorGap) {
+  static notifyObservers(content: CursorGap, dragType: "dragging" | "dragend") {
     const clickedKeyframes = Observer.keyframeList.map<ClickedKeyframes>(
       (observer) => observer.keyframeNotify(content)
     );
     const clasifiedKeyframes: ClasifiedKeyframes[] = [];
     for (let index = 0; index < clickedKeyframes.length; index += 1) {
       const keyframeData = clickedKeyframes[index];
-      const { timeIndex, lineIndex, keyframeIndex, y } = keyframeData;
-      const datum: KeyframeDatum = {
-        keyframeIndex,
-        timeIndex,
-        y,
-      };
+      const { lineIndex } = keyframeData;
       const binaryIndex = fnGetBinarySearch({
         collection: clasifiedKeyframes,
         index: lineIndex,
@@ -67,16 +53,19 @@ class Observer {
       if (binaryIndex === -1) {
         clasifiedKeyframes.push({
           lineIndex: lineIndex,
-          keyframeDatum: [datum],
+          keyframeDatum: [keyframeData],
         });
       } else {
-        clasifiedKeyframes[binaryIndex].keyframeDatum.push(datum);
+        clasifiedKeyframes[binaryIndex].keyframeDatum.push(keyframeData);
       }
     }
-    if (clasifiedKeyframes.length) {
+    if (!clasifiedKeyframes.length) return;
+    if (dragType === "dragging") {
       Observer.curveLineList.forEach((observer) =>
         observer.curveLineNotify(clasifiedKeyframes)
       );
+    } else if (dragType === "dragend") {
+      return clasifiedKeyframes;
     }
   }
 }

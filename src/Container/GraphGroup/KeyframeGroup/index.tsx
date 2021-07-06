@@ -26,7 +26,7 @@ const KeyframeGroup: FunctionComponent<Props> = (props) => {
     <g>
       {datum.map((data, index) => (
         <Keyframe
-          key={`${trackName}_${index}`}
+          key={`${trackName}_${data[0]}_${data[1]}`}
           data={data}
           keyframeIndex={index}
           lineIndex={lineIndex}

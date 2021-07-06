@@ -45,9 +45,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   const { color, datum, trackName, xyzIndex, lineIndex } = props;
   const pathRef = useRef<SVGPathElement>(null);
   const isAlreadyClicked = useRef(false);
-  const lineData = useRef<LineData[]>(
-    datum.map((data, index) => [data[0], data[1], index]) // [timeIndex, y, keyframeIndex]
-  );
+  const lineData = useRef<LineData[]>([]);
 
   const [renderingCount, setRenderingCount] = useState(0);
   const [mouseIn, setMouseIn] = useState(false);
@@ -155,16 +153,22 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     }
   }, [callCurveLineObserver, clickedTarget, lineIndex, trackName, xyz]);
 
+  // datum 변경 싱 lineData 업데이트
+  useEffect(() => {
+    lineData.current = datum.map((data, index) => [data[0], data[1], index]);
+    setRenderingCount((prev) => prev + 1);
+  }, [datum]);
+
   const Path = useMemo(() => {
     const lineGenerator = d3
       .line()
       .curve(d3.curveMonotoneX)
       .x((d) => Scale.xScale(d[0]))
       .y((d) => Scale.yScale(d[1]));
-    const filteredLineData = lineData.current.map((data) => [
+    const pathShapes: [number, number][] = lineData.current.map((data) => [
       data[0],
       data[1],
-    ]) as [number, number][];
+    ]);
     // const regExp = /(\.\d{4})\d+/g;
     // const pathShapes = lineGenerator(filteredLineData)?.replace(regExp, "$1");
     return (
@@ -172,7 +176,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
         className={cx({ "mouse-in": mouseIn, clicked })}
         fill="none"
         stroke={color}
-        d={lineGenerator(filteredLineData) as string}
+        d={lineGenerator(pathShapes) as string}
         ref={pathRef}
         onClick={handleClickCurveLine}
         onMouseEnter={handleMouseEvent}
@@ -182,10 +186,10 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   }, [
     clicked,
     color,
-    renderingCount,
     handleClickCurveLine,
     handleMouseEvent,
     mouseIn,
+    renderingCount,
   ]);
 
   return Path;

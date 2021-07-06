@@ -30,9 +30,10 @@ interface Props {
 
 const Keyframe: FunctionComponent<Props> = (props) => {
   const { data, keyframeIndex, lineIndex, trackName, xyz } = props;
+  const circlePosition = useRef({ timeIndex: data[0], y: data[1] });
   const circleRef = useRef<SVGCircleElement>(null);
   const isAlreadyClicked = useRef(false);
-  const circlePosition = useRef({ timeIndex: data[0], y: data[1] });
+  const dragged = useRef(false);
 
   const [renderingCount, setRenderingCount] = useState(0);
   const [mouseIn, setMouseIn] = useState(false);
@@ -44,7 +45,6 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   // 키프레임 클릭
   const handleClickKeyframe = useCallback(
     (event: React.MouseEvent) => {
-      console.log("click");
       event.preventDefault();
       const { timeIndex, y } = circlePosition.current;
       const clickedTarget: ClickedTarget = {
@@ -69,13 +69,11 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     setMouseIn((prev) => !prev);
   }, []);
 
-  const dragged = useRef(false);
   // 키프레임 드래그 이벤트
   useEffect(() => {
     const x = Scale.xScale;
     let prevCursorX = 0;
     let prevCursorY = 0;
-    // let dragged = false;
 
     // 현재 cursorXY를 prevCursorXY에 저장
     const setPrevCursor = (x: number, y: number) => {
@@ -96,6 +94,17 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       return [cursorX, cursorY];
     };
 
+    // drag observer 호출
+    const notifyDragObserver = (
+      cursorX: number,
+      cursorY: number,
+      dragType: "dragging" | "dragend"
+    ) => {
+      const cursorGapX = prevCursorX - cursorX; // 직전 커서 x좌표 - 현재 커서 x좌표
+      const cursorGapY = prevCursorY - cursorY; // 직전 커서 y좌표 - 현재 커서 y좌표
+      return Observer.notifyObservers({ cursorGapX, cursorGapY }, dragType);
+    };
+
     // 드래그 이벤트 시작
     const handleDragStart = (event: any) => {
       const [cursorX, cursorY] = getCursorXY(event);
@@ -106,14 +115,17 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     const handleDragging = (event: any) => {
       if (!dragged.current) dragged.current = true; // drag가 시작되면 dragged를 fasle -> true로 변경
       const [cursorX, cursorY] = getCursorXY(event);
-      const cursorGapX = prevCursorX - cursorX; // 직전 커서 x좌표 - 현재 커서 x좌표
-      const cursorGapY = prevCursorY - cursorY; // 직전 커서 y좌표 - 현재 커서 y좌표
-      Observer.notifyObservers({ cursorGapX, cursorGapY });
+      notifyDragObserver(cursorX, cursorY, "dragging");
       setPrevCursor(cursorX, cursorY);
     };
 
+    // 드래그 이벤트 종료
     const handleDragEnd = (event: any) => {
       if (!dragged.current) return; // dragged가 false라면(drag를 하지 않았다면) return을 시켜서 함수 종료
+      const [cursorX, cursorY] = getCursorXY(event);
+      const keyframes = notifyDragObserver(cursorX, cursorY, "dragend");
+      if (keyframes) dispatch(curveEditor.updateCurveEditorData({ keyframes }));
+      Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       dragged.current = false;
     };
 
@@ -127,9 +139,9 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       )
       .on("end", handleDragEnd);
     d3.select(circleRef.current).call(dragBehavior as any);
-  }, []);
+  }, [dispatch]);
 
-  // 키프레임 옵저버 호출
+  // 키프레임 등록 옵저버 호출
   const callKeyframeObserver = useCallback(() => {
     Observer.addKeyframeObserver({
       keyframeNotify: ({ cursorGapX, cursorGapY }) => {
@@ -145,10 +157,10 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         circlePosition.current.timeIndex = timeIndex;
         circlePosition.current.y = y;
         setRenderingCount((prev) => prev + 1);
-        return { timeIndex, y, lineIndex, keyframeIndex };
+        return { timeIndex, y, lineIndex, keyframeIndex, trackName };
       },
     });
-  }, [keyframeIndex, lineIndex]);
+  }, [keyframeIndex, lineIndex, trackName]);
 
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
@@ -184,18 +196,6 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     xyz,
   ]);
 
-  // const handleDragStart = useCallback(() => {
-  //   console.log("start");
-  // }, []);
-
-  // const handleDrag = useCallback(() => {
-  //   console.log("drag");
-  // }, []);
-
-  // const handleDragEnd = useCallback(() => {
-  //   console.log("end");
-  // }, []);
-
   const Circle = useMemo(() => {
     const { timeIndex, y } = circlePosition.current;
     const circleX = Scale.xScale(timeIndex) | 0;
@@ -210,20 +210,9 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         onClick={handleClickKeyframe}
         onMouseEnter={handleCursorInOut}
         onMouseOut={handleCursorInOut}
-        // onDragStart={handleDragStart}
-        // onDrag={handleDrag}
-        // onDragEnd={handleDragEnd}
       />
     );
-  }, [
-    clicked,
-    handleClickKeyframe,
-    handleCursorInOut,
-    // handleDrag,
-    // handleDragEnd,
-    // handleDragStart,
-    renderingCount,
-  ]);
+  }, [clicked, handleClickKeyframe, handleCursorInOut, renderingCount]);
 
   return Circle;
 };

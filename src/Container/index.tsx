@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import _ from "lodash";
+import { useSelector } from "reducers";
 import GraphGroup from "./GraphGroup";
-import dummy from "../dummy.json";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
 import Scale from "./scale";
@@ -25,7 +25,11 @@ const App = () => {
   const yAxisRef = useRef<SVGGElement>(null);
   const xGridRef = useRef<SVGGElement>(null);
   const yGridRef = useRef<SVGGElement>(null);
+
   const [isEmpty, setIsEmpty] = useState(false);
+  const curveEditorData = useSelector(
+    (state) => state.curveEditor.curveEditorData
+  );
 
   useEffect(() => {
     if (
@@ -126,15 +130,16 @@ const App = () => {
         </g>
         <g id="graph-group-wrapper">
           {isEmpty &&
-            dummy.baseLayer.slice(0, 12).map((bone, lineIndex) => {
-              const { name, times, values } = bone;
+            curveEditorData.map((track, lineIndex) => {
+              const { name, x, y, z } = track;
               return (
                 <GraphGroup
                   key={name}
                   name={name}
-                  times={times}
-                  values={values}
                   lineIndex={lineIndex}
+                  x={x}
+                  y={y}
+                  z={z}
                 />
               );
             })}
