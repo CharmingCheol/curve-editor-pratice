@@ -40,23 +40,26 @@ export const curveEditor = (
           }
         };
         // 동일한 time에 키프레임이 있을 경우 제거
-        const sliceKeyframe = (
+        const setKeyframeDelete = (
           lineIndex: number,
           timeIndex: number,
           keyframeIndex: number,
           xyzChar: "x" | "y" | "z"
         ) => {
           const xyz = draft.curveEditorData[lineIndex][xyzChar];
-          const existedIndex = xyz.findIndex((value, index) => {
+          for (let index = 0; index < xyz.length; index += 1) {
+            const target = xyz[index];
             if (
-              index !== keyframeIndex &&
-              value[0] === timeIndex &&
-              value[1] !== 0
-            )
-              return index;
-          });
-          if (existedIndex !== keyframeIndex) xyz[existedIndex] = [0, 0];
+              index !== keyframeIndex && // 자신의 키프레임이 아니고
+              target[0] === timeIndex && // timeIndex는 같으면서
+              target[1] !== 0 // y값이 0이 아닌 경우
+            ) {
+              xyz[index] = [0, 0];
+              break;
+            }
+          }
         };
+        // 키프레임 데이터 업데이트
         action.payload.keyframes.forEach((keyframe) => {
           const { keyframeDatum } = keyframe;
           const lineIndex = (keyframe.lineIndex / 3) | 0;
@@ -66,11 +69,11 @@ export const curveEditor = (
           if (values) {
             keyframeDatum.forEach(({ keyframeIndex, timeIndex, y }) => {
               values[keyframeIndex] = [timeIndex, y];
-              sliceKeyframe(lineIndex, timeIndex, keyframeIndex, xyzChar);
+              setKeyframeDelete(lineIndex, timeIndex, keyframeIndex, xyzChar);
             });
             values.sort((a, b) => a[0] - b[0]);
             const filterdValues = values.filter(
-              (value) => value[0] !== 0 || value[1] !== 0
+              ([time, y]) => time !== 0 || y !== 0
             );
             draft.curveEditorData[lineIndex][xyzChar] = filterdValues;
           }
