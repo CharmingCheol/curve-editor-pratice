@@ -26,20 +26,21 @@ export const curveEditor = (
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_DATA": {
-      const nextState = produce(state, (draft) => {
+      return produce(state, (draft) => {
         // x, y, z중에 해당되는 value 가져오기
         const getAmongXYZ = (lineIndex: number, xyzIndex: number) => {
+          const xyz = draft.curveEditorData[lineIndex];
           switch (xyzIndex) {
             case 0:
-              return draft.curveEditorData[lineIndex].x;
+              return xyz.x;
             case 1:
-              return draft.curveEditorData[lineIndex].y;
+              return xyz.y;
             case 2:
-              return draft.curveEditorData[lineIndex].z;
+              return xyz.z;
           }
         };
         // 동일한 time에 키프레임이 있을 경우 제거
-        const sliceValues = (
+        const sliceKeyframe = (
           lineIndex: number,
           keyframeIndex: number,
           value: [number, number][],
@@ -72,13 +73,13 @@ export const curveEditor = (
           if (values) {
             keyframeDatum.forEach((keyframe) => {
               values[keyframe.keyframeIndex] = [keyframe.timeIndex, keyframe.y];
-              sliceValues(lineIndex, keyframe.keyframeIndex, values, xyzChar);
+              sliceKeyframe(lineIndex, keyframe.keyframeIndex, values, xyzChar);
               values.sort((a, b) => a[0] - b[0]);
             });
           }
         });
+        draft.clickedTarget = null;
       });
-      return nextState;
     }
     default: {
       return state;
