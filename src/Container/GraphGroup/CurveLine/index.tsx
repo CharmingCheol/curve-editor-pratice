@@ -48,7 +48,6 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   const lineData = useRef<LineData[]>([]);
 
   const [renderingCount, setRenderingCount] = useState(0);
-  const [mouseIn, setMouseIn] = useState(false);
   const [clicked, setClicked] = useState(false);
 
   const dispatch = useDispatch();
@@ -63,11 +62,6 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       return "z";
     }
   }, [xyzIndex]);
-
-  // curve line 마우스 이벤트 적용
-  const handleMouseEvent = useCallback(() => {
-    setMouseIn((prev) => !prev);
-  }, []);
 
   // curve line 클릭
   const handleClickCurveLine = useCallback(
@@ -173,24 +167,15 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     // const pathShapes = lineGenerator(filteredLineData)?.replace(regExp, "$1");
     return (
       <path
-        className={cx({ "mouse-in": mouseIn, clicked })}
+        className={cx({ clicked })}
         fill="none"
         stroke={color}
         d={lineGenerator(pathShapes) as string}
         ref={pathRef}
         onClick={handleClickCurveLine}
-        onMouseEnter={handleMouseEvent}
-        onMouseOut={handleMouseEvent}
       />
     );
-  }, [
-    clicked,
-    color,
-    handleClickCurveLine,
-    handleMouseEvent,
-    mouseIn,
-    renderingCount,
-  ]);
+  }, [clicked, color, handleClickCurveLine, renderingCount]);
 
   return Path;
 };

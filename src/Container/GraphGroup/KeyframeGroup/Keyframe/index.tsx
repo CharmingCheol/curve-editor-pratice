@@ -36,7 +36,6 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   const dragged = useRef(false);
 
   const [renderingCount, setRenderingCount] = useState(0);
-  const [mouseIn, setMouseIn] = useState(false);
   const [clicked, setClicked] = useState(false);
 
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
@@ -63,11 +62,6 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     },
     [dispatch, trackName, xyz]
   );
-
-  // 키프레임 cursor in/out
-  const handleCursorInOut = useCallback(() => {
-    setMouseIn((prev) => !prev);
-  }, []);
 
   // 키프레임 드래그 이벤트
   useEffect(() => {
@@ -208,11 +202,9 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         cy={circleY}
         className={cx({ clicked })}
         onClick={handleClickKeyframe}
-        onMouseEnter={handleCursorInOut}
-        onMouseOut={handleCursorInOut}
       />
     );
-  }, [clicked, handleClickKeyframe, handleCursorInOut, renderingCount]);
+  }, [clicked, handleClickKeyframe, renderingCount]);
 
   return Circle;
 };

@@ -42,8 +42,8 @@ const App = () => {
       return;
     const width = window.innerWidth;
     const height = window.innerHeight;
-
     Scale.setScale(width, height);
+
     const margin = Scale.scaleMargin;
     const x = Scale.xScale;
     const y = Scale.yScale;
@@ -101,11 +101,11 @@ const App = () => {
       const transformX = transform.x + margin.left;
       const transformY = transform.y + margin.top;
       const translate3d = `translate3d(${transformX}px, ${transformY}px, 0px)`;
-      const strokeWidth = `stroke-width:${1 / scale + 1};`;
-      const graphWrapper = document.getElementById("graph-group-wrapper");
+      const strokeWidth = `stroke-width:${1 / scale + 1}`;
 
+      const graphWrapper = document.getElementById("graph-group-wrapper");
       if (graphWrapper) {
-        graphWrapper.style.cssText = `transform:${translate3d} scale(${scale}); ${strokeWidth}`;
+        graphWrapper.style.cssText = `transform:${translate3d} scale(${scale}); ${strokeWidth};`;
       }
     };
 
