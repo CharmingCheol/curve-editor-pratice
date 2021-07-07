@@ -42,27 +42,20 @@ export const curveEditor = (
         // 동일한 time에 키프레임이 있을 경우 제거
         const sliceKeyframe = (
           lineIndex: number,
+          timeIndex: number,
           keyframeIndex: number,
-          value: [number, number][],
           xyzChar: "x" | "y" | "z"
         ) => {
-          if (
-            value[keyframeIndex - 1] &&
-            value[keyframeIndex][0] === value[keyframeIndex - 1][0]
-          ) {
-            draft.curveEditorData[lineIndex][xyzChar] = [
-              ...value.slice(0, keyframeIndex - 1),
-              ...value.slice(keyframeIndex, value.length),
-            ];
-          } else if (
-            value[keyframeIndex + 1] &&
-            value[keyframeIndex][0] === value[keyframeIndex + 1][0]
-          ) {
-            draft.curveEditorData[lineIndex][xyzChar] = [
-              ...value.slice(0, keyframeIndex + 1),
-              ...value.slice(keyframeIndex + 2, value.length),
-            ];
-          }
+          const xyz = draft.curveEditorData[lineIndex][xyzChar];
+          const existedIndex = xyz.findIndex((value, index) => {
+            if (
+              index !== keyframeIndex &&
+              value[0] === timeIndex &&
+              value[1] !== 0
+            )
+              return index;
+          });
+          if (existedIndex !== keyframeIndex) xyz[existedIndex] = [0, 0];
         };
         action.payload.keyframes.forEach((keyframe) => {
           const { keyframeDatum } = keyframe;
@@ -71,11 +64,15 @@ export const curveEditor = (
           const values = getAmongXYZ(lineIndex, xyzIndex);
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           if (values) {
-            keyframeDatum.forEach((keyframe) => {
-              values[keyframe.keyframeIndex] = [keyframe.timeIndex, keyframe.y];
-              sliceKeyframe(lineIndex, keyframe.keyframeIndex, values, xyzChar);
-              values.sort((a, b) => a[0] - b[0]);
+            keyframeDatum.forEach(({ keyframeIndex, timeIndex, y }) => {
+              values[keyframeIndex] = [timeIndex, y];
+              sliceKeyframe(lineIndex, timeIndex, keyframeIndex, xyzChar);
             });
+            values.sort((a, b) => a[0] - b[0]);
+            const filterdValues = values.filter(
+              (value) => value[0] !== 0 || value[1] !== 0
+            );
+            draft.curveEditorData[lineIndex][xyzChar] = filterdValues;
           }
         });
         draft.clickedTarget = null;
