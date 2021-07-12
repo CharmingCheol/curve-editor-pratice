@@ -38,14 +38,12 @@ interface Props {
   trackName: string;
   xyzIndex: number;
   lineIndex: number;
-  changeGraphGroupXY: ({ x, y }: { x: number; y: number }) => void;
 }
 
 type LineData = [number, number, number]; // [timeIndex, y, keyframeIndex]
 
 const CurveLine: FunctionComponent<Props> = (props) => {
-  const { color, datum, trackName, xyzIndex, lineIndex, changeGraphGroupXY } =
-    props;
+  const { color, datum, trackName, xyzIndex, lineIndex } = props;
   const dispatch = useDispatch();
   const pathRef = useRef<SVGPathElement>(null);
   const lineData = useRef<LineData[]>([]);
@@ -109,7 +107,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
         }
       },
     });
-  }, [changeGraphGroupXY, lineIndex]);
+  }, [lineIndex]);
 
   // 커브라인 clicked state 변경
   useEffect(() => {
