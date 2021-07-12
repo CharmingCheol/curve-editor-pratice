@@ -6,44 +6,52 @@ interface CursorGap {
   cursorGapY: number;
 }
 
-interface ClickedKeyframes extends KeyframeDatum {
+interface SelectedKeyframes extends KeyframeDatum {
   lineIndex: number;
   trackName: string;
 }
 
-interface ObserverParams {
-  keyframeNotify?: (content: CursorGap) => ClickedKeyframes;
-  curveLineNotify?: (content: ClasifiedKeyframes[]) => void;
+interface KeyframeRegistration {
+  registerKeyframe: (cursorGap: CursorGap) => SelectedKeyframes; // 키프레임 선택
+  isRegisterKeyframe: (cursorGap: CursorGap) => void;
+}
+
+interface CurveLineRegistration {
+  isRegisteredCurveLine: (clasifiedKeyframes: ClasifiedKeyframes[]) => void; // 키프레임 선택에 의해 커브라인도 선택 됨
+  registerCurveLine: (cursorGap: CursorGap) => void; // 커브라인 선택
 }
 
 class Observer {
-  private static keyframeList: any[] = [];
-  private static curveLineList: any[] = [];
+  private static keyframeList: KeyframeRegistration[] = [];
+  private static curveLineList: CurveLineRegistration[] = [];
 
   // 옵저버 리스트 초기화
   static clearObservers() {
-    Observer.keyframeList.length = 0;
-    Observer.curveLineList.length = 0;
+    this.keyframeList.length = 0;
+    this.curveLineList.length = 0;
   }
 
   // 리스트에 클릭 된 키프레임 추가
-  static addKeyframeObserver(target: ObserverParams) {
-    Observer.keyframeList.push(target);
+  static addKeyframeObserver(target: KeyframeRegistration) {
+    this.keyframeList.push(target);
   }
 
   // 리스트에 클릭 된 커브 라인 추가
-  static addCurveLineObserver(target: ObserverParams) {
-    Observer.curveLineList.push(target);
+  static addCurveLineObserver(target: CurveLineRegistration) {
+    this.curveLineList.push(target);
   }
 
-  // 옵저버 호출
-  static notifyObservers(content: CursorGap, dragType: "dragging" | "dragend") {
-    const clickedKeyframes = Observer.keyframeList.map<ClickedKeyframes>(
-      (observer) => observer.keyframeNotify(content)
+  // keyframe 호출 시, curve line도 같이 호출
+  static notifyToKeyframeFromCurveLine(
+    cursorGap: CursorGap,
+    dragType: "dragging" | "dragend"
+  ) {
+    const selectedKeyframes = this.keyframeList.map(({ registerKeyframe }) =>
+      registerKeyframe(cursorGap)
     );
     const clasifiedKeyframes: ClasifiedKeyframes[] = [];
-    for (let index = 0; index < clickedKeyframes.length; index += 1) {
-      const keyframeData = clickedKeyframes[index];
+    for (let index = 0; index < selectedKeyframes.length; index += 1) {
+      const keyframeData = selectedKeyframes[index];
       const { lineIndex } = keyframeData;
       const binaryIndex = fnGetBinarySearch({
         collection: clasifiedKeyframes,
@@ -61,12 +69,25 @@ class Observer {
     }
     if (!clasifiedKeyframes.length) return;
     if (dragType === "dragging") {
-      Observer.curveLineList.forEach((observer) =>
-        observer.curveLineNotify(clasifiedKeyframes)
+      this.curveLineList.forEach((observer) =>
+        observer.isRegisteredCurveLine(clasifiedKeyframes)
       );
     } else if (dragType === "dragend") {
       return clasifiedKeyframes;
     }
+  }
+
+  // curve line 호출 시, keyframe도 같이 호출
+  static notifySelectedCurveLines(
+    cursorGap: CursorGap,
+    dragType: "dragging" | "dragend"
+  ) {
+    this.curveLineList.forEach(({ registerCurveLine }) =>
+      registerCurveLine(cursorGap)
+    );
+    this.keyframeList.forEach(({ isRegisterKeyframe }) =>
+      isRegisterKeyframe(cursorGap)
+    );
   }
 }
 

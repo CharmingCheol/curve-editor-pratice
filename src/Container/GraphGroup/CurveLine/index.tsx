@@ -11,12 +11,13 @@ import * as d3 from "d3";
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as curveEditor from "actions/curveEditor";
-import { ClickedTarget, XYZ } from "types/curveEditor";
+import { ClickedTarget } from "types/curveEditor";
 import { fnGetBinarySearch } from "utils";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
+import useDragCurveEditor from "Container/useDragCurveEditor";
 
 const cx = classNames.bind(styles);
 
@@ -37,31 +38,24 @@ interface Props {
   trackName: string;
   xyzIndex: number;
   lineIndex: number;
+  changeGraphGroupXY: ({ x, y }: { x: number; y: number }) => void;
 }
 
 type LineData = [number, number, number]; // [timeIndex, y, keyframeIndex]
 
 const CurveLine: FunctionComponent<Props> = (props) => {
-  const { color, datum, trackName, xyzIndex, lineIndex } = props;
+  const { color, datum, trackName, xyzIndex, lineIndex, changeGraphGroupXY } =
+    props;
+  const dispatch = useDispatch();
   const pathRef = useRef<SVGPathElement>(null);
-  const isAlreadyClicked = useRef(false);
   const lineData = useRef<LineData[]>([]);
+  const isAlreadyClicked = useRef(false);
 
   const [renderingCount, setRenderingCount] = useState(0);
   const [clicked, setClicked] = useState(false);
 
-  const dispatch = useDispatch();
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
-
-  const xyz = useMemo<XYZ>(() => {
-    if (xyzIndex === 0) {
-      return "x";
-    } else if (xyzIndex === 1) {
-      return "y";
-    } else {
-      return "z";
-    }
-  }, [xyzIndex]);
+  const xyz = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
 
   // curve line 클릭
   const handleClickCurveLine = useCallback(
@@ -82,10 +76,18 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     [dispatch, trackName, xyz]
   );
 
+  const [graphGroupXY, setGraphGroupXY] = useState({ x: 0, y: 0 });
   // 커브라인 옵저버 호출
   const callCurveLineObserver = useCallback(() => {
     Observer.addCurveLineObserver({
-      curveLineNotify: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
+      registerCurveLine: ({ cursorGapX, cursorGapY }) => {
+        const stateAction = (prevState: any) => ({
+          x: prevState.x - cursorGapX,
+          y: prevState.y - cursorGapY,
+        });
+        setGraphGroupXY((prevState) => stateAction(prevState));
+      },
+      isRegisteredCurveLine: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
         const binaryIndex = fnGetBinarySearch({
           collection: clasifiedKeyframes,
           index: lineIndex,
@@ -107,7 +109,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
         }
       },
     });
-  }, [lineIndex]);
+  }, [changeGraphGroupXY, lineIndex]);
 
   // 커브라인 clicked state 변경
   useEffect(() => {
@@ -121,7 +123,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       clickedTarget.trackName === trackName &&
       clickedTarget.xyz === xyz;
     if (clickedTarget.ctrl) {
-      if (isClickedKeyframe || isAlreadyClicked.current) {
+      if (isClickedMe || isClickedKeyframe || isAlreadyClicked.current) {
         isAlreadyClicked.current = true;
         callCurveLineObserver();
         setClicked(true);
@@ -147,37 +149,47 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     }
   }, [callCurveLineObserver, clickedTarget, lineIndex, trackName, xyz]);
 
-  // datum 변경 싱 lineData 업데이트
+  useDragCurveEditor({
+    onDragging: ({ prevCursor, currentCursor }) => {
+      const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
+      const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
+      Observer.notifySelectedCurveLines({ cursorGapX, cursorGapY }, "dragging");
+    },
+    onDragEnd: () => {},
+    ref: pathRef,
+    throttleTime: 75,
+  });
+
+  // datum 변경 시 lineData 업데이트
   useEffect(() => {
     lineData.current = datum.map((data, index) => [data[0], data[1], index]);
     setRenderingCount((prev) => prev + 1);
   }, [datum]);
 
-  const Path = useMemo(() => {
+  const pathShapes = useMemo(() => {
     const lineGenerator = d3
       .line()
       .curve(d3.curveMonotoneX)
-      .x((d) => Scale.xScale(d[0]))
-      .y((d) => Scale.yScale(d[1]));
-    const pathShapes: [number, number][] = lineData.current.map((data) => [
+      .x((xy) => Scale.xScale(xy[0]))
+      .y((xy) => Scale.yScale(xy[1]));
+    const pathData: [number, number][] = lineData.current.map((data) => [
       data[0],
       data[1],
     ]);
-    // const regExp = /(\.\d{4})\d+/g;
-    // const pathShapes = lineGenerator(filteredLineData)?.replace(regExp, "$1");
-    return (
-      <path
-        className={cx({ clicked })}
-        fill="none"
-        stroke={color}
-        d={lineGenerator(pathShapes) as string}
-        ref={pathRef}
-        onClick={handleClickCurveLine}
-      />
-    );
-  }, [clicked, color, handleClickCurveLine, renderingCount]);
+    return lineGenerator(pathData) as string;
+  }, [renderingCount]);
 
-  return Path;
+  return (
+    <path
+      transform={`translate(${graphGroupXY.x}, ${graphGroupXY.y})`}
+      className={cx({ clicked })}
+      fill="none"
+      stroke={color}
+      d={pathShapes}
+      ref={pathRef}
+      onClick={handleClickCurveLine}
+    />
+  );
 };
 
 export default memo(CurveLine);

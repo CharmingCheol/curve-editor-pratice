@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { Fragment, useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import _ from "lodash";
 import { useSelector } from "reducers";
@@ -26,7 +26,7 @@ const App = () => {
   const xGridRef = useRef<SVGGElement>(null);
   const yGridRef = useRef<SVGGElement>(null);
 
-  const [isEmpty, setIsEmpty] = useState(false);
+  const [isNotEmpty, setIsNotEmpty] = useState(false);
   const curveEditorData = useSelector(
     (state) => state.curveEditor.curveEditorData
   );
@@ -116,7 +116,7 @@ const App = () => {
       }, ZOOM_THROTTLE_TIMER)
     );
     svg.call(zoomBehavior as any);
-    setIsEmpty(true);
+    setIsNotEmpty(true);
   }, []);
 
   return (
@@ -129,18 +129,21 @@ const App = () => {
           <g ref={yGridRef} />
         </g>
         <g id="graph-group-wrapper">
-          {isEmpty &&
+          {isNotEmpty &&
             curveEditorData.map((track, lineIndex) => {
               const { name, x, y, z } = track;
               return (
-                <GraphGroup
-                  key={name}
-                  name={name}
-                  lineIndex={lineIndex}
-                  x={x}
-                  y={y}
-                  z={z}
-                />
+                <Fragment key={`${name}_${lineIndex}`}>
+                  {[x, y, z].map((values, xyzIndex) => (
+                    <GraphGroup
+                      key={`${name}_${lineIndex * 3 + xyzIndex}_${xyzIndex}`}
+                      name={name}
+                      lineIndex={lineIndex * 3 + xyzIndex}
+                      xyzIndex={xyzIndex}
+                      values={values}
+                    />
+                  ))}
+                </Fragment>
               );
             })}
         </g>

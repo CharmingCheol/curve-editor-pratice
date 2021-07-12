@@ -10,13 +10,13 @@ import React, {
 import * as d3 from "d3";
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
-import _ from "lodash";
 import * as curveEditor from "actions/curveEditor";
 import { ClickedTarget, XYZ } from "types/curveEditor";
-import classNames from "classnames/bind";
-import styles from "./index.module.scss";
+import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
+import classNames from "classnames/bind";
+import styles from "./index.module.scss";
 
 const cx = classNames.bind(styles);
 
@@ -33,7 +33,6 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   const circlePosition = useRef({ timeIndex: data[0], y: data[1] });
   const circleRef = useRef<SVGCircleElement>(null);
   const isAlreadyClicked = useRef(false);
-  const dragged = useRef(false);
 
   const [renderingCount, setRenderingCount] = useState(0);
   const [clicked, setClicked] = useState(false);
@@ -64,81 +63,33 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   );
 
   // 키프레임 드래그 이벤트
-  useEffect(() => {
-    const x = Scale.xScale;
-    let prevCursorX = 0;
-    let prevCursorY = 0;
-
-    // 현재 cursorXY를 prevCursorXY에 저장
-    const setPrevCursor = (x: number, y: number) => {
-      prevCursorX = x;
-      prevCursorY = y;
-    };
-
-    // cursorX 기준으로 현재 time index 계산
-    const getTimeIndex = (circleX: number) => {
-      return Math.round(x.invert(circleX));
-    };
-
-    // 현재 커서의 xy 계산
-    const getCursorXY = (event: any) => {
-      const timeIndex = getTimeIndex(event.x);
-      const cursorX = x(timeIndex) | 0;
-      const cursorY = event.y;
-      return [cursorX, cursorY];
-    };
-
-    // drag observer 호출
-    const notifyDragObserver = (
-      cursorX: number,
-      cursorY: number,
-      dragType: "dragging" | "dragend"
-    ) => {
-      const cursorGapX = prevCursorX - cursorX; // 직전 커서 x좌표 - 현재 커서 x좌표
-      const cursorGapY = prevCursorY - cursorY; // 직전 커서 y좌표 - 현재 커서 y좌표
-      return Observer.notifyObservers({ cursorGapX, cursorGapY }, dragType);
-    };
-
-    // 드래그 이벤트 시작
-    const handleDragStart = (event: any) => {
-      const [cursorX, cursorY] = getCursorXY(event);
-      setPrevCursor(cursorX, cursorY);
-    };
-
-    // 드래그 이벤트 진행
-    const handleDragging = (event: any) => {
-      if (!dragged.current) dragged.current = true; // drag가 시작되면 dragged를 fasle -> true로 변경
-      const [cursorX, cursorY] = getCursorXY(event);
-      notifyDragObserver(cursorX, cursorY, "dragging");
-      setPrevCursor(cursorX, cursorY);
-    };
-
-    // 드래그 이벤트 종료
-    const handleDragEnd = (event: any) => {
-      if (!dragged.current) return; // dragged가 false라면(drag를 하지 않았다면) return을 시켜서 함수 종료
-      const [cursorX, cursorY] = getCursorXY(event);
-      const keyframes = notifyDragObserver(cursorX, cursorY, "dragend");
+  useDragCurveEditor({
+    onDragging: ({ prevCursor, currentCursor }) => {
+      const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
+      const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
+      Observer.notifyToKeyframeFromCurveLine(
+        { cursorGapX, cursorGapY },
+        "dragging"
+      );
+    },
+    onDragEnd: ({ prevCursor, currentCursor }) => {
+      const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
+      const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
+      const keyframes = Observer.notifyToKeyframeFromCurveLine(
+        { cursorGapX, cursorGapY },
+        "dragend"
+      );
       if (keyframes) dispatch(curveEditor.updateCurveEditorData({ keyframes }));
       Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
-      dragged.current = false;
-    };
+    },
+    ref: circleRef,
+  });
 
-    // 드래그 이벤트 세팅
-    const dragBehavior = d3
-      .drag()
-      .on("start", handleDragStart)
-      .on(
-        "drag",
-        _.throttle((event) => handleDragging(event), 50)
-      )
-      .on("end", handleDragEnd);
-    d3.select(circleRef.current).call(dragBehavior as any);
-  }, [dispatch]);
-
-  // 키프레임 등록 옵저버 호출
+  const [graphGroupXY, setGraphGroupXY] = useState({ x: 0, y: 0 });
+  // 옵저버에 선택 된 키프레임 추가
   const callKeyframeObserver = useCallback(() => {
     Observer.addKeyframeObserver({
-      keyframeNotify: ({ cursorGapX, cursorGapY }) => {
+      registerKeyframe: ({ cursorGapX, cursorGapY }) => {
         const circle = d3.select(circleRef.current);
         const circleX = parseInt(circle.attr("cx"), 10);
         const circleY = parseFloat(circle.attr("cy"));
@@ -148,10 +99,16 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         const timeIndex = Math.round(invertXscale(circleX - cursorGapX));
         const y = invertYscale(circleY - cursorGapY);
 
-        circlePosition.current.timeIndex = timeIndex;
-        circlePosition.current.y = y;
+        circlePosition.current = { timeIndex, y };
         setRenderingCount((prev) => prev + 1);
         return { timeIndex, y, lineIndex, keyframeIndex, trackName };
+      },
+      isRegisterKeyframe: ({ cursorGapX, cursorGapY }) => {
+        const stateAction = (prevState: any) => ({
+          x: prevState.x - cursorGapX,
+          y: prevState.y - cursorGapY,
+        });
+        setGraphGroupXY((prevState) => stateAction(prevState));
       },
     });
   }, [keyframeIndex, lineIndex, trackName]);
@@ -167,13 +124,17 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       clickedTarget.coordinates?.y === y;
     const isAltClick =
       clickedTarget.alt && clickedTarget.coordinates?.x === timeIndex;
+    const isClickedCurveLine =
+      clickedTarget.type === "curveLine" &&
+      clickedTarget.trackName === trackName &&
+      clickedTarget.xyz === xyz;
     if (clickedTarget.ctrl) {
-      if (isClickedMe || isAlreadyClicked.current) {
+      if (isClickedMe || isAlreadyClicked.current || isClickedCurveLine) {
         isAlreadyClicked.current = true;
         callKeyframeObserver();
         setClicked(true);
       }
-    } else if (isClickedMe || isAltClick) {
+    } else if (isClickedMe || isAltClick || isClickedCurveLine) {
       isAlreadyClicked.current = true;
       callKeyframeObserver();
       setClicked(true);
@@ -190,23 +151,24 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     xyz,
   ]);
 
-  const Circle = useMemo(() => {
+  const circleXY = useMemo(() => {
     const { timeIndex, y } = circlePosition.current;
     const circleX = Scale.xScale(timeIndex) | 0;
     const circleY = Scale.yScale(y);
-    return (
-      <circle
-        ref={circleRef}
-        r={2}
-        cx={circleX}
-        cy={circleY}
-        className={cx({ clicked })}
-        onClick={handleClickKeyframe}
-      />
-    );
-  }, [clicked, handleClickKeyframe, renderingCount]);
+    return { x: circleX, y: circleY };
+  }, [renderingCount]);
 
-  return Circle;
+  return (
+    <circle
+      transform={`translate(${graphGroupXY.x}, ${graphGroupXY.y})`}
+      ref={circleRef}
+      r={2}
+      cx={circleXY.x}
+      cy={circleXY.y}
+      className={cx({ clicked })}
+      onClick={handleClickKeyframe}
+    />
+  );
 };
 
 export default memo(Keyframe);

@@ -1,5 +1,4 @@
-import React, { useMemo, FunctionComponent } from "react";
-import { XYZ } from "types/curveEditor";
+import React, { FunctionComponent } from "react";
 import Keyframe from "./Keyframe";
 
 interface Props {
@@ -11,16 +10,7 @@ interface Props {
 
 const KeyframeGroup: FunctionComponent<Props> = (props) => {
   const { datum, trackName, xyzIndex, lineIndex } = props;
-
-  const xyz = useMemo<XYZ>(() => {
-    if (xyzIndex === 0) {
-      return "x";
-    } else if (xyzIndex === 1) {
-      return "y";
-    } else {
-      return "z";
-    }
-  }, [xyzIndex]);
+  const xyz = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
 
   return (
     <g>
