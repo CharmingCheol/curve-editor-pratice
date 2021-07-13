@@ -14,7 +14,7 @@ import styles from "./index.module.scss";
 const cx = classNames.bind(styles);
 
 type D3ScaleLinear = d3.ScaleLinear<number, number, never>;
-type D3SvgGElement = d3.Selection<SVGGElement, unknown, null, undefined>;
+type D3SVGGElement = d3.Selection<SVGGElement, unknown, null, undefined>;
 
 interface D3ZoomDatum {
   name: string;
@@ -45,9 +45,9 @@ const AxisWrapper: FunctionComponent<Props> = (props) => {
     const height = window.innerHeight;
     Scale.setScale(width, height);
 
-    const margin = Scale.scaleMargin;
-    const x = Scale.xScale;
-    const y = Scale.yScale;
+    const margin = Scale.getScaleMargin();
+    const scaleX = Scale.getScaleX();
+    const scaleY = Scale.getScaleY();
 
     const svg = d3.select(curveEditorRef.current);
     const xAxis = d3.select(xAxisRef.current);
@@ -55,15 +55,15 @@ const AxisWrapper: FunctionComponent<Props> = (props) => {
     const xGrid = d3.select(xGridRef.current);
     const yGrid = d3.select(yGridRef.current);
 
-    const arrangeXAxis = (g: D3SvgGElement, scaleX: D3ScaleLinear) => {
+    const arrangeXAxis = (g: D3SVGGElement, scaleX: D3ScaleLinear) => {
       g.call(d3.axisTop(scaleX));
     };
 
-    const arrangeYAxis = (g: D3SvgGElement, scaleY: D3ScaleLinear) => {
+    const arrangeYAxis = (g: D3SVGGElement, scaleY: D3ScaleLinear) => {
       g.call(d3.axisRight(scaleY));
     };
 
-    const arrangeXGrid = (g: D3SvgGElement, scaleX: D3ScaleLinear) => {
+    const arrangeXGrid = (g: D3SVGGElement, scaleX: D3ScaleLinear) => {
       g.selectAll("line")
         .data(scaleX.ticks())
         .join("line")
@@ -73,7 +73,7 @@ const AxisWrapper: FunctionComponent<Props> = (props) => {
         .attr("y2", height - margin.bottom);
     };
 
-    const arrangeYGrid = (g: D3SvgGElement, scaleY: D3ScaleLinear) => {
+    const arrangeYGrid = (g: D3SVGGElement, scaleY: D3ScaleLinear) => {
       g.selectAll("line")
         .data(scaleY.ticks())
         .join("line")
@@ -83,20 +83,18 @@ const AxisWrapper: FunctionComponent<Props> = (props) => {
         .attr("x2", width - margin.right);
     };
 
-    xAxis.call((g) => arrangeXAxis(g, x));
-    yAxis.call((g) => arrangeYAxis(g, y));
-    xGrid.call((g) => arrangeXGrid(g, x));
-    yGrid.call((g) => arrangeYGrid(g, y));
+    const updateAxis = (scaleX: D3ScaleLinear, scaleY: D3ScaleLinear) => {
+      xAxis.call((g) => arrangeXAxis(g, scaleX));
+      yAxis.call((g) => arrangeYAxis(g, scaleY));
+      xGrid.call((g) => arrangeXGrid(g, scaleX));
+      yGrid.call((g) => arrangeYGrid(g, scaleY));
+    };
 
     const updateScreen = (event: d3.D3ZoomEvent<Element, D3ZoomDatum>) => {
       const { transform } = event;
-      const rescaleX = transform.rescaleX(x);
-      const rescaleY = transform.rescaleY(y);
-
-      xAxis.call((g) => arrangeXAxis(g, rescaleX));
-      yAxis.call((g) => arrangeYAxis(g, rescaleY));
-      xGrid.call((g) => arrangeXGrid(g, rescaleX));
-      yGrid.call((g) => arrangeYGrid(g, rescaleY));
+      const rescaleX = transform.rescaleX(scaleX);
+      const rescaleY = transform.rescaleY(scaleY);
+      updateAxis(rescaleX, rescaleY);
 
       const scale = transform.k;
       const transformX = transform.x + margin.left;
@@ -116,6 +114,7 @@ const AxisWrapper: FunctionComponent<Props> = (props) => {
         updateScreen(event);
       }, 100)
     );
+    updateAxis(scaleX, scaleY);
     svg.call(zoomBehavior as any);
   }, [curveEditorRef]);
 

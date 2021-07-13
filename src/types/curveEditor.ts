@@ -1,31 +1,36 @@
-export type XYZ = "x" | "y" | "z";
-
 export interface ClickedTarget {
-  type: "curveLine" | "keyframe";
-  trackName: string;
-  xyz: XYZ;
-  ctrl?: boolean;
   alt?: boolean;
-  coordinates?: { x: number; y: number };
+  coordinates?: PointXY;
+  ctrl?: boolean;
+  targetType: "curveLine" | "keyframe";
+  trackName: string;
+  xyzType: "x" | "y" | "z";
 }
 
 export interface CurveEditorData {
   interpolation: string;
   isIncluded: boolean;
-  name: string;
-  x: [number, number][];
-  y: [number, number][];
-  z: [number, number][];
+  trackName: string;
+  x: GraphValues[];
+  y: GraphValues[];
+  z: GraphValues[];
 }
 
-export interface KeyframeDatum {
+export interface KeyframeData {
   keyframeIndex: number;
   timeIndex: number;
-  y: number;
   trackName: string;
+  value: number;
 }
 
 export interface ClasifiedKeyframes {
   lineIndex: number;
-  keyframeDatum: KeyframeDatum[];
+  keyframeData: KeyframeData[];
 }
+
+export interface PointXY {
+  x: number;
+  y: number;
+}
+
+export type GraphValues = [number, number]; // [timeIndex, value]

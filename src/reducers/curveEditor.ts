@@ -25,7 +25,7 @@ export const curveEditor = (
         clickedTarget: action.payload.clickedTarget,
       });
     }
-    case "curveEditor/UPDATE_CURVE_EDITOR_DATA": {
+    case "curveEditor/UPDATE_CURVE_EDITOR_BY_KEYFRAME": {
       return produce(state, (draft) => {
         // x, y, z중에 해당되는 value 가져오기
         const getAmongXYZ = (lineIndex: number, xyzIndex: number) => {
@@ -61,14 +61,14 @@ export const curveEditor = (
         };
         // 키프레임 데이터 업데이트
         action.payload.keyframes.forEach((keyframe) => {
-          const { keyframeDatum } = keyframe;
+          const { keyframeData } = keyframe;
           const lineIndex = (keyframe.lineIndex / 3) | 0;
           const xyzIndex = keyframe.lineIndex % 3;
           const values = getAmongXYZ(lineIndex, xyzIndex);
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           if (values) {
-            keyframeDatum.forEach(({ keyframeIndex, timeIndex, y }) => {
-              values[keyframeIndex] = [timeIndex, y];
+            keyframeData.forEach(({ keyframeIndex, timeIndex, value }) => {
+              values[keyframeIndex] = [timeIndex, value];
               setKeyframeDelete(lineIndex, timeIndex, keyframeIndex, xyzChar);
             });
             values.sort((a, b) => a[0] - b[0]);
@@ -79,6 +79,19 @@ export const curveEditor = (
           }
         });
         draft.clickedTarget = null;
+      });
+    }
+    case "curveEditor/UPDATE_CURVE_EDITOR_BY_CURVE_LINE": {
+      return produce(state, (draft) => {
+        const { changedX, changedY } = action.payload;
+        const lineIndex = (action.payload.lineIndex / 3) | 0;
+        const xyzIndex = action.payload.lineIndex % 3;
+        const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
+        const lineData = draft.curveEditorData[lineIndex][xyzChar];
+        const updatedLineData = lineData.map<[number, number]>(([x, y]) => {
+          return [x - changedX, y - changedY];
+        });
+        draft.curveEditorData[lineIndex][xyzChar] = updatedLineData;
       });
     }
     default: {

@@ -2,7 +2,8 @@ import { ClickedTarget, ClasifiedKeyframes } from "types/curveEditor";
 
 export type CurveEditorAction =
   | ReturnType<typeof changeClickedTarget>
-  | ReturnType<typeof updateCurveEditorData>;
+  | ReturnType<typeof updateCurveEditorByCurveLine>
+  | ReturnType<typeof updateCurveEditorByKeyframe>;
 
 // curve line, keyframe 클릭 시 clickedTarget 데이터 변경
 interface ChangeClickedTarget {
@@ -19,16 +20,37 @@ export const changeClickedTarget = (params: ChangeClickedTarget) => ({
   },
 });
 
-// curve editor 업데이트
-interface UpdateCurveEditorData {
+// keyframe에 의해 curve editor 데이터 업데이트
+interface UpdateCurveEditorByKeyframe {
   keyframes: ClasifiedKeyframes[];
 }
 
-export const UPDATE_CURVE_EDITOR_DATA =
-  "curveEditor/UPDATE_CURVE_EDITOR_DATA" as const;
+export const UPDATE_CURVE_EDITOR_BY_KEYFRAME =
+  "curveEditor/UPDATE_CURVE_EDITOR_BY_KEYFRAME" as const;
 
-export const updateCurveEditorData = (params: UpdateCurveEditorData) => ({
-  type: UPDATE_CURVE_EDITOR_DATA,
+export const updateCurveEditorByKeyframe = (
+  params: UpdateCurveEditorByKeyframe
+) => ({
+  type: UPDATE_CURVE_EDITOR_BY_KEYFRAME,
+  payload: {
+    ...params,
+  },
+});
+
+// curve line에 의해 curve editor 데이터 업데이트
+interface UpdateCurveEditorByCurveLine {
+  changedX: number;
+  changedY: number;
+  lineIndex: number;
+}
+
+export const UPDATE_CURVE_EDITOR_BY_CURVE_LINE =
+  "curveEditor/UPDATE_CURVE_EDITOR_BY_CURVE_LINE" as const;
+
+export const updateCurveEditorByCurveLine = (
+  params: UpdateCurveEditorByCurveLine
+) => ({
+  type: UPDATE_CURVE_EDITOR_BY_CURVE_LINE,
   payload: {
     ...params,
   },

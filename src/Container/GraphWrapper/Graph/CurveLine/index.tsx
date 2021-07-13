@@ -11,7 +11,11 @@ import * as d3 from "d3";
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as curveEditor from "actions/curveEditor";
-import { ClickedTarget } from "types/curveEditor";
+import {
+  ClasifiedKeyframes,
+  ClickedTarget,
+  GraphValues,
+} from "types/curveEditor";
 import { fnGetBinarySearch } from "utils";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
@@ -21,47 +25,37 @@ import useDragCurveEditor from "Container/useDragCurveEditor";
 
 const cx = classNames.bind(styles);
 
-interface KeyframeDatum {
-  keyframeIndex: number;
-  timeIndex: number;
-  y: number;
-}
-
-interface ClasifiedKeyframes {
-  lineIndex: number;
-  keyframeDatum: KeyframeDatum[];
-}
-
 interface Props {
   color: string;
-  datum: [number, number][];
-  trackName: string;
-  xyzIndex: number;
   lineIndex: number;
+  trackName: string;
+  values: GraphValues[];
+  xyzIndex: number;
 }
 
-type LineData = [number, number, number]; // [timeIndex, y, keyframeIndex]
+type PathData = [number, number, number]; // [timeIndex, y, keyframeIndex]
 
 const CurveLine: FunctionComponent<Props> = (props) => {
-  const { color, datum, trackName, xyzIndex, lineIndex } = props;
+  const { color, values, trackName, xyzIndex, lineIndex } = props;
   const dispatch = useDispatch();
   const pathRef = useRef<SVGPathElement>(null);
-  const lineData = useRef<LineData[]>([]);
-  const isAlreadyClicked = useRef(false);
+  const pathData = useRef<PathData[]>([]);
+  const isAlreadySelected = useRef(false);
 
   const [renderingCount, setRenderingCount] = useState(0);
-  const [clicked, setClicked] = useState(false);
+  const [selected, setSelected] = useState(false);
+  const [pathTransform, setPathTransform] = useState({ x: 0, y: 0 });
 
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
-  const xyz = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
+  const xyzType = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
 
   // curve line 클릭
   const handleClickCurveLine = useCallback(
     (event: React.MouseEvent) => {
       const clickedTarget: ClickedTarget = {
-        type: "curveLine",
+        targetType: "curveLine",
         trackName,
-        xyz,
+        xyzType,
         ctrl: event.ctrlKey || event.metaKey,
         alt: event.altKey,
       };
@@ -71,38 +65,38 @@ const CurveLine: FunctionComponent<Props> = (props) => {
         })
       );
     },
-    [dispatch, trackName, xyz]
+    [dispatch, trackName, xyzType]
   );
 
-  const [graphGroupXY, setGraphGroupXY] = useState({ x: 0, y: 0 });
   // 커브라인 옵저버 호출
   const callCurveLineObserver = useCallback(() => {
-    Observer.addCurveLineObserver({
-      registerCurveLine: ({ cursorGapX, cursorGapY }) => {
+    Observer.registerCurveLine({
+      active: ({ x, y }) => {
         const stateAction = (prevState: any) => ({
-          x: prevState.x - cursorGapX,
-          y: prevState.y - cursorGapY,
+          x: prevState.x - x,
+          y: prevState.y - y,
         });
-        setGraphGroupXY((prevState) => stateAction(prevState));
+        setPathTransform((prevState) => stateAction(prevState));
       },
-      isRegisteredCurveLine: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
+      passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
         const binaryIndex = fnGetBinarySearch({
           collection: clasifiedKeyframes,
           index: lineIndex,
           key: "lineIndex",
         });
         if (binaryIndex !== -1) {
-          clasifiedKeyframes[binaryIndex].keyframeDatum.forEach((data) => {
-            const keyframeIndex = lineData.current.findIndex(
-              (line) => line[2] === data.keyframeIndex // line[2] : keyframeIndex
+          const myKeyframes = clasifiedKeyframes[binaryIndex].keyframeData;
+          myKeyframes.forEach((keyframe) => {
+            const keyframeIndex = pathData.current.findIndex(
+              (line) => line[2] === keyframe.keyframeIndex // line[2] : keyframeIndex
             );
-            lineData.current[keyframeIndex] = [
-              data.timeIndex,
-              data.y,
-              data.keyframeIndex,
+            pathData.current[keyframeIndex] = [
+              keyframe.timeIndex,
+              keyframe.value,
+              keyframe.keyframeIndex,
             ];
           });
-          lineData.current.sort((a: LineData, b: LineData) => a[0] - b[0]); // time index순으로 정렬
+          pathData.current.sort((a: PathData, b: PathData) => a[0] - b[0]); // time index순으로 정렬
           setRenderingCount((prev) => prev + 1);
         }
       },
@@ -113,74 +107,86 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   useEffect(() => {
     if (!clickedTarget) return;
     const isClickedMe =
-      clickedTarget.type === "curveLine" &&
+      clickedTarget.targetType === "curveLine" &&
       clickedTarget.trackName === trackName &&
-      clickedTarget.xyz === xyz;
+      clickedTarget.xyzType === xyzType;
     const isClickedKeyframe =
-      clickedTarget.type === "keyframe" &&
+      clickedTarget.targetType === "keyframe" &&
       clickedTarget.trackName === trackName &&
-      clickedTarget.xyz === xyz;
+      clickedTarget.xyzType === xyzType;
     if (clickedTarget.ctrl) {
-      if (isClickedMe || isClickedKeyframe || isAlreadyClicked.current) {
-        isAlreadyClicked.current = true;
+      if (isClickedMe || isClickedKeyframe || isAlreadySelected.current) {
+        isAlreadySelected.current = true;
         callCurveLineObserver();
-        setClicked(true);
+        setSelected(true);
       }
     } else if (isClickedMe || isClickedKeyframe) {
-      isAlreadyClicked.current = true;
+      isAlreadySelected.current = true;
       callCurveLineObserver();
-      setClicked(true);
+      setSelected(true);
     } else if (clickedTarget.alt && clickedTarget.coordinates) {
-      const times = lineData.current.map((data) => data[0]);
+      const times = pathData.current.map((data) => data[0]);
       const binaryIndex = fnGetBinarySearch({
         collection: times,
         index: clickedTarget.coordinates.x,
       });
       if (binaryIndex !== -1) {
-        isAlreadyClicked.current = true;
+        isAlreadySelected.current = true;
         callCurveLineObserver();
-        setClicked(true);
+        setSelected(true);
       }
     } else {
-      isAlreadyClicked.current = false;
-      setClicked(false);
+      isAlreadySelected.current = false;
+      setSelected(false);
     }
-  }, [callCurveLineObserver, clickedTarget, lineIndex, trackName, xyz]);
+  }, [callCurveLineObserver, clickedTarget, lineIndex, trackName, xyzType]);
 
   useDragCurveEditor({
     onDragging: ({ prevCursor, currentCursor }) => {
       const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
       const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
-      Observer.notifySelectedCurveLines({ cursorGapX, cursorGapY }, "dragging");
+      Observer.notifyCurveLines({ x: cursorGapX, y: cursorGapY });
     },
-    onDragEnd: () => {},
+    onDragEnd: ({ event }) => {
+      const invertScaleX = Scale.getScaleX().invert;
+      const invertScaleY = Scale.getScaleY().invert;
+      const { x: originX, y: originY } = event.subject;
+      const { x: lastX, y: lastY } = event;
+      const changedX = Math.round(invertScaleX(lastX) - invertScaleX(originX));
+      const changedY = invertScaleY(originY) - invertScaleY(lastY);
+      const params = { changedX, changedY, lineIndex };
+      dispatch(curveEditor.updateCurveEditorByCurveLine(params));
+      setPathTransform({ x: 0, y: 0 });
+    },
     ref: pathRef,
     throttleTime: 75,
   });
 
   // datum 변경 시 lineData 업데이트
   useEffect(() => {
-    lineData.current = datum.map((data, index) => [data[0], data[1], index]);
+    pathData.current = values.map((data, index) => [data[0], data[1], index]);
     setRenderingCount((prev) => prev + 1);
-  }, [datum]);
+  }, [values]);
 
   const pathShapes = useMemo(() => {
+    const scaleX = Scale.getScaleX();
+    const scaleY = Scale.getScaleY();
     const lineGenerator = d3
       .line()
       .curve(d3.curveMonotoneX)
-      .x((xy) => Scale.xScale(xy[0]))
-      .y((xy) => Scale.yScale(xy[1]));
-    const pathData: [number, number][] = lineData.current.map((data) => [
+      .x((xy) => scaleX(xy[0]))
+      .y((xy) => scaleY(xy[1]));
+    const graphValues: GraphValues[] = pathData.current.map((data) => [
       data[0],
       data[1],
     ]);
-    return lineGenerator(pathData) as string;
+    return lineGenerator(graphValues) as string;
   }, [renderingCount]);
 
   return (
     <path
-      transform={`translate(${graphGroupXY.x}, ${graphGroupXY.y})`}
-      className={cx({ clicked })}
+      transform={`translate(${pathTransform.x}, ${pathTransform.y})`}
+      className={cx({ selected })}
       fill="none"
       stroke={color}
       d={pathShapes}

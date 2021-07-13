@@ -1,6 +1,7 @@
+import { CurveEditorData } from "types/curveEditor";
 import dummy from "../dummy.json";
 
-const curveEditorDataHelper = () => {
+const curveEditorDataHelper = (): CurveEditorData[] => {
   return dummy.baseLayer.slice(0, 12).map((data) => {
     const x: [number, number][] = [];
     const y: [number, number][] = [];
@@ -29,7 +30,7 @@ const curveEditorDataHelper = () => {
     return {
       interpolation: data.interpolation,
       isIncluded: data.isIncluded,
-      name: data.name,
+      trackName: data.name,
       x,
       y,
       z,

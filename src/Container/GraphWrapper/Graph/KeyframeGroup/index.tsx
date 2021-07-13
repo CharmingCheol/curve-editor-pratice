@@ -1,27 +1,28 @@
 import React, { FunctionComponent } from "react";
+import { GraphValues } from "types/curveEditor";
 import Keyframe from "./Keyframe";
 
 interface Props {
-  datum: number[][];
-  trackName: string;
-  xyzIndex: number;
   lineIndex: number;
+  trackName: string;
+  values: GraphValues[];
+  xyzIndex: number;
 }
 
 const KeyframeGroup: FunctionComponent<Props> = (props) => {
-  const { datum, trackName, xyzIndex, lineIndex } = props;
-  const xyz = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
+  const { lineIndex, trackName, values, xyzIndex } = props;
+  const xyzType = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
 
   return (
     <g>
-      {datum.map((data, index) => (
+      {values.map((keyframeValue, keyframeIndex) => (
         <Keyframe
-          key={`${trackName}_${data[0]}_${data[1]}`}
-          data={data}
-          keyframeIndex={index}
+          key={`${keyframeValue[0]}_${keyframeValue[1]}`}
+          data={keyframeValue}
+          keyframeIndex={keyframeIndex}
           lineIndex={lineIndex}
           trackName={trackName}
-          xyz={xyz}
+          xyzType={xyzType}
         />
       ))}
     </g>

@@ -1,53 +1,49 @@
 import { fnGetBinarySearch } from "utils";
-import { KeyframeDatum, ClasifiedKeyframes } from "types/curveEditor";
+import { PointXY, KeyframeData, ClasifiedKeyframes } from "types/curveEditor";
 
-interface CursorGap {
-  cursorGapX: number;
-  cursorGapY: number;
-}
-
-interface SelectedKeyframes extends KeyframeDatum {
+interface SelectedKeyframes extends KeyframeData {
   lineIndex: number;
   trackName: string;
 }
 
-interface KeyframeRegistration {
-  registerKeyframe: (cursorGap: CursorGap) => SelectedKeyframes; // 키프레임 선택
-  isRegisterKeyframe: (cursorGap: CursorGap) => void;
+interface RegisterKeyframe {
+  active: (cursorGap: PointXY) => SelectedKeyframes; // 키프레임 선택
+  passive: (cursorGap: PointXY) => void;
 }
 
-interface CurveLineRegistration {
-  isRegisteredCurveLine: (clasifiedKeyframes: ClasifiedKeyframes[]) => void; // 키프레임 선택에 의해 커브라인도 선택 됨
-  registerCurveLine: (cursorGap: CursorGap) => void; // 커브라인 선택
+interface RegisterCurveLine {
+  active: (cursorGap: PointXY) => void; // 커브라인 선택
+  passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => void; // 키프레임 선택에 의해 커브라인도 선택 됨
 }
 
 class Observer {
-  private static keyframeList: KeyframeRegistration[] = [];
-  private static curveLineList: CurveLineRegistration[] = [];
+  private static keyframes: RegisterKeyframe[] = [];
+  private static curveLines: RegisterCurveLine[] = [];
 
   // 옵저버 리스트 초기화
   static clearObservers() {
-    this.keyframeList.length = 0;
-    this.curveLineList.length = 0;
+    this.keyframes.length = 0;
+    this.curveLines.length = 0;
   }
 
   // 리스트에 클릭 된 키프레임 추가
-  static addKeyframeObserver(target: KeyframeRegistration) {
-    this.keyframeList.push(target);
+  static registerKeyframe(target: RegisterKeyframe) {
+    this.keyframes.push(target);
   }
 
   // 리스트에 클릭 된 커브 라인 추가
-  static addCurveLineObserver(target: CurveLineRegistration) {
-    this.curveLineList.push(target);
+  static registerCurveLine(target: RegisterCurveLine) {
+    this.curveLines.push(target);
   }
 
   // keyframe 호출 시, curve line도 같이 호출
-  static notifyToKeyframeFromCurveLine(
-    cursorGap: CursorGap,
-    dragType: "dragging" | "dragend"
-  ) {
-    const selectedKeyframes = this.keyframeList.map(({ registerKeyframe }) =>
-      registerKeyframe(cursorGap)
+  static notifyKeyframes(params: {
+    cursorGap: PointXY;
+    dragType: "dragging" | "dragend";
+  }) {
+    const { cursorGap, dragType } = params;
+    const selectedKeyframes = this.keyframes.map(({ active }) =>
+      active(cursorGap)
     );
     const clasifiedKeyframes: ClasifiedKeyframes[] = [];
     for (let index = 0; index < selectedKeyframes.length; index += 1) {
@@ -61,33 +57,25 @@ class Observer {
       if (binaryIndex === -1) {
         clasifiedKeyframes.push({
           lineIndex: lineIndex,
-          keyframeDatum: [keyframeData],
+          keyframeData: [keyframeData],
         });
       } else {
-        clasifiedKeyframes[binaryIndex].keyframeDatum.push(keyframeData);
+        clasifiedKeyframes[binaryIndex].keyframeData.push(keyframeData);
       }
     }
-    if (!clasifiedKeyframes.length) return;
-    if (dragType === "dragging") {
-      this.curveLineList.forEach((observer) =>
-        observer.isRegisteredCurveLine(clasifiedKeyframes)
-      );
-    } else if (dragType === "dragend") {
-      return clasifiedKeyframes;
+    if (clasifiedKeyframes.length) {
+      if (dragType === "dragging") {
+        this.curveLines.forEach(({ passive }) => passive(clasifiedKeyframes));
+      } else if (dragType === "dragend") {
+        return clasifiedKeyframes;
+      }
     }
   }
 
   // curve line 호출 시, keyframe도 같이 호출
-  static notifySelectedCurveLines(
-    cursorGap: CursorGap,
-    dragType: "dragging" | "dragend"
-  ) {
-    this.curveLineList.forEach(({ registerCurveLine }) =>
-      registerCurveLine(cursorGap)
-    );
-    this.keyframeList.forEach(({ isRegisterKeyframe }) =>
-      isRegisterKeyframe(cursorGap)
-    );
+  static notifyCurveLines(cursorGap: PointXY) {
+    this.curveLines.forEach(({ active }) => active(cursorGap));
+    this.keyframes.forEach(({ passive }) => passive(cursorGap));
   }
 }
 

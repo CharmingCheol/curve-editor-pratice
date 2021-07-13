@@ -1,30 +1,31 @@
 import React, { FunctionComponent } from "react";
+import { GraphValues } from "types/curveEditor";
 import CurveLine from "./CurveLine";
 import KeyframeGroup from "./KeyframeGroup";
 
 interface Props {
-  name: string;
+  trackName: string;
   lineIndex: number;
+  values: GraphValues[];
   xyzIndex: number;
-  values: [number, number][];
 }
 
-const GraphGroup: FunctionComponent<Props> = (props) => {
-  const { name, lineIndex, xyzIndex, values } = props;
+const Graph: FunctionComponent<Props> = (props) => {
+  const { trackName, lineIndex, xyzIndex, values } = props;
   const color = xyzIndex === 0 ? "red" : xyzIndex === 1 ? "green" : "blue";
 
   return (
     <g>
       <CurveLine
-        datum={values}
+        values={values}
         color={color}
-        trackName={name}
+        trackName={trackName}
         xyzIndex={xyzIndex}
         lineIndex={lineIndex}
       />
       <KeyframeGroup
-        datum={values}
-        trackName={name}
+        values={values}
+        trackName={trackName}
         xyzIndex={xyzIndex}
         lineIndex={lineIndex}
       />
@@ -32,4 +33,4 @@ const GraphGroup: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default GraphGroup;
+export default Graph;

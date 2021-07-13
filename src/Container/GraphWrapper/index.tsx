@@ -11,14 +11,14 @@ const GraphWrapper: FunctionComponent<Props> = () => {
 
   return (
     <g id="graph-wrapper">
-      {curveEditorData?.map((track, lineIndex) => {
-        const { name, x, y, z } = track;
+      {curveEditorData?.map((graph, lineIndex) => {
+        const { trackName, x, y, z } = graph;
         return (
-          <Fragment key={`${name}_${lineIndex}`}>
+          <Fragment key={`${trackName}_${lineIndex}`}>
             {[x, y, z].map((values, xyzIndex) => (
               <Graph
-                key={`${name}_${lineIndex * 3 + xyzIndex}_${xyzIndex}`}
-                name={name}
+                key={`${trackName}_${lineIndex * 3 + xyzIndex}_${xyzIndex}`}
+                trackName={trackName}
                 lineIndex={lineIndex * 3 + xyzIndex}
                 xyzIndex={xyzIndex}
                 values={values}
