@@ -117,15 +117,13 @@ const CurveLine: FunctionComponent<Props> = (props) => {
         "dragend"
       );
       if (lineIndices) {
-        const invertScaleX = Scale.getScaleX().invert;
-        const invertScaleY = Scale.getScaleY().invert;
+        const invertX = Scale.getScaleX().invert;
+        const invertY = Scale.getScaleY().invert;
 
         const { x: originX, y: originY } = event.subject;
         const { x: lastX, y: lastY } = event;
-        const changedX = Math.round(
-          invertScaleX(lastX) - invertScaleX(originX)
-        );
-        const changedY = invertScaleY(originY) - invertScaleY(lastY);
+        const changedX = Math.round(invertX(originX) - invertX(lastX));
+        const changedY = invertY(originY) - invertY(lastY);
         const params = { changedX, changedY, lineIndices };
 
         dispatch(curveEditor.updateCurveEditorByCurveLine(params));
