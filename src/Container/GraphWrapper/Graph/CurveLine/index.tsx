@@ -72,11 +72,10 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   const callCurveLineObserver = useCallback(() => {
     Observer.registerCurveLine({
       active: ({ x, y }) => {
-        const stateAction = (prevState: any) => ({
+        setPathTransform((prevState) => ({
           x: prevState.x - x,
           y: prevState.y - y,
-        });
-        setPathTransform((prevState) => stateAction(prevState));
+        }));
       },
       passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
         const binaryIndex = fnGetBinarySearch({
@@ -105,7 +104,12 @@ const CurveLine: FunctionComponent<Props> = (props) => {
 
   // 커브라인 clicked state 변경
   useEffect(() => {
-    if (!clickedTarget) return;
+    if (!clickedTarget) {
+      isAlreadySelected.current = false;
+      setPathTransform({ x: 0, y: 0 });
+      setSelected(false);
+      return;
+    }
     const isClickedMe =
       clickedTarget.targetType === "curveLine" &&
       clickedTarget.trackName === trackName &&
@@ -156,7 +160,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       const changedY = invertScaleY(originY) - invertScaleY(lastY);
       const params = { changedX, changedY, lineIndex };
       dispatch(curveEditor.updateCurveEditorByCurveLine(params));
-      setPathTransform({ x: 0, y: 0 });
+      Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
     },
     ref: pathRef,
     throttleTime: 75,

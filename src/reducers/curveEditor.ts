@@ -91,6 +91,7 @@ export const curveEditor = (
         const updatedLineData = lineData.map<[number, number]>(([x, y]) => {
           return [x - changedX, y - changedY];
         });
+        draft.clickedTarget = null;
         draft.curveEditorData[lineIndex][xyzChar] = updatedLineData;
       });
     }

@@ -11,7 +11,7 @@ import * as d3 from "d3";
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as curveEditor from "actions/curveEditor";
-import { ClickedTarget } from "types/curveEditor";
+import { ClickedTarget, PointXY } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
@@ -105,18 +105,22 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         return { timeIndex, value, lineIndex, keyframeIndex, trackName };
       },
       passive: ({ x, y }) => {
-        const stateAction = (prevState: any) => ({
+        setCircleTransform((prevState) => ({
           x: prevState.x - x,
           y: prevState.y - y,
-        });
-        setCircleTransform((prevState) => stateAction(prevState));
+        }));
       },
     });
   }, [keyframeIndex, lineIndex, trackName]);
 
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
-    if (!clickedTarget) return;
+    if (!clickedTarget) {
+      isAlreadySelected.current = false;
+      setCircleTransform({ x: 0, y: 0 });
+      setSelected(false);
+      return;
+    }
     const { timeIndex, value } = circlePoint.current;
     const isClickedMe =
       clickedTarget.trackName === trackName &&
