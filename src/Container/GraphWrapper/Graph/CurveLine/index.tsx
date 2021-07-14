@@ -76,6 +76,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
           x: prevState.x - x,
           y: prevState.y - y,
         }));
+        return lineIndex;
       },
       passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
         const binaryIndex = fnGetBinarySearch({
@@ -101,6 +102,39 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       },
     });
   }, [lineIndex]);
+
+  useDragCurveEditor({
+    onDragging: ({ prevCursor, currentCursor }) => {
+      const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
+      const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
+      Observer.notifyCurveLines({ x: cursorGapX, y: cursorGapY }, "dragging");
+    },
+    onDragEnd: ({ prevCursor, currentCursor, event }) => {
+      const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
+      const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
+      const lineIndices = Observer.notifyCurveLines(
+        { x: cursorGapX, y: cursorGapY },
+        "dragend"
+      );
+      if (lineIndices) {
+        const invertScaleX = Scale.getScaleX().invert;
+        const invertScaleY = Scale.getScaleY().invert;
+
+        const { x: originX, y: originY } = event.subject;
+        const { x: lastX, y: lastY } = event;
+        const changedX = Math.round(
+          invertScaleX(lastX) - invertScaleX(originX)
+        );
+        const changedY = invertScaleY(originY) - invertScaleY(lastY);
+        const params = { changedX, changedY, lineIndices };
+
+        dispatch(curveEditor.updateCurveEditorByCurveLine(params));
+        Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
+      }
+    },
+    ref: pathRef,
+    throttleTime: 75,
+  });
 
   // 커브라인 clicked state 변경
   useEffect(() => {
@@ -145,28 +179,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     }
   }, [callCurveLineObserver, clickedTarget, lineIndex, trackName, xyzType]);
 
-  useDragCurveEditor({
-    onDragging: ({ prevCursor, currentCursor }) => {
-      const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
-      const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
-      Observer.notifyCurveLines({ x: cursorGapX, y: cursorGapY });
-    },
-    onDragEnd: ({ event }) => {
-      const invertScaleX = Scale.getScaleX().invert;
-      const invertScaleY = Scale.getScaleY().invert;
-      const { x: originX, y: originY } = event.subject;
-      const { x: lastX, y: lastY } = event;
-      const changedX = Math.round(invertScaleX(lastX) - invertScaleX(originX));
-      const changedY = invertScaleY(originY) - invertScaleY(lastY);
-      const params = { changedX, changedY, lineIndex };
-      dispatch(curveEditor.updateCurveEditorByCurveLine(params));
-      Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
-    },
-    ref: pathRef,
-    throttleTime: 75,
-  });
-
-  // datum 변경 시 lineData 업데이트
+  // values가 변경 될 경우 pathData 업데이트
   useEffect(() => {
     pathData.current = values.map((data, index) => [data[0], data[1], index]);
     setRenderingCount((prev) => prev + 1);

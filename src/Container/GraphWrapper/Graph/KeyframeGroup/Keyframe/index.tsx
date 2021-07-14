@@ -11,7 +11,7 @@ import * as d3 from "d3";
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as curveEditor from "actions/curveEditor";
-import { ClickedTarget, PointXY } from "types/curveEditor";
+import { ClickedTarget } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";

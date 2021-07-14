@@ -41,7 +41,7 @@ export const updateCurveEditorByKeyframe = (
 interface UpdateCurveEditorByCurveLine {
   changedX: number;
   changedY: number;
-  lineIndex: number;
+  lineIndices: number[];
 }
 
 export const UPDATE_CURVE_EDITOR_BY_CURVE_LINE =

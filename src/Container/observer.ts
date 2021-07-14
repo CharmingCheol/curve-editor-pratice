@@ -12,7 +12,7 @@ interface RegisterKeyframe {
 }
 
 interface RegisterCurveLine {
-  active: (cursorGap: PointXY) => void; // 커브라인 선택
+  active: (cursorGap: PointXY) => number; // 커브라인 선택
   passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => void; // 키프레임 선택에 의해 커브라인도 선택 됨
 }
 
@@ -73,9 +73,16 @@ class Observer {
   }
 
   // curve line 호출 시, keyframe도 같이 호출
-  static notifyCurveLines(cursorGap: PointXY) {
-    this.curveLines.forEach(({ active }) => active(cursorGap));
-    this.keyframes.forEach(({ passive }) => passive(cursorGap));
+  static notifyCurveLines(
+    cursorGap: PointXY,
+    dragType: "dragging" | "dragend"
+  ) {
+    if (dragType === "dragging") {
+      this.curveLines.forEach(({ active }) => active(cursorGap));
+      this.keyframes.forEach(({ passive }) => passive(cursorGap));
+    } else if (dragType === "dragend") {
+      return this.curveLines.map(({ active }) => active(cursorGap));
+    }
   }
 }
 

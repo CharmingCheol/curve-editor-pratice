@@ -83,16 +83,18 @@ export const curveEditor = (
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_CURVE_LINE": {
       return produce(state, (draft) => {
-        const { changedX, changedY } = action.payload;
-        const lineIndex = (action.payload.lineIndex / 3) | 0;
-        const xyzIndex = action.payload.lineIndex % 3;
-        const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
-        const lineData = draft.curveEditorData[lineIndex][xyzChar];
-        const updatedLineData = lineData.map<[number, number]>(([x, y]) => {
-          return [x - changedX, y - changedY];
+        const { changedX, changedY, lineIndices } = action.payload;
+        lineIndices.forEach((lineIndex) => {
+          const quotient = (lineIndex / 3) | 0;
+          const remaider = lineIndex % 3;
+          const xyzChar = remaider === 0 ? "x" : remaider === 1 ? "y" : "z";
+          const lineData = draft.curveEditorData[quotient][xyzChar];
+          const updatedLineData = lineData.map<[number, number]>(([x, y]) => {
+            return [x - changedX, y - changedY];
+          });
+          draft.curveEditorData[quotient][xyzChar] = updatedLineData;
         });
         draft.clickedTarget = null;
-        draft.curveEditorData[lineIndex][xyzChar] = updatedLineData;
       });
     }
     default: {
