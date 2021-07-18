@@ -8,7 +8,7 @@ interface SelectedKeyframes extends KeyframeData {
 
 interface RegisterKeyframe {
   active: (cursorGap: PointXY) => SelectedKeyframes; // 키프레임 선택
-  passive: (cursorGap: PointXY) => void;
+  // passive: (cursorGap: PointXY) => void;
 }
 
 interface RegisterCurveLine {
@@ -79,7 +79,6 @@ class Observer {
   ) {
     if (dragType === "dragging") {
       this.curveLines.forEach(({ active }) => active(cursorGap));
-      this.keyframes.forEach(({ passive }) => passive(cursorGap));
     } else if (dragType === "dragend") {
       return this.curveLines.map(({ active }) => active(cursorGap));
     }

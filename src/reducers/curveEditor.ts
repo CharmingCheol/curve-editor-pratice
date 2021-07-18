@@ -90,7 +90,7 @@ export const curveEditor = (
           const xyzChar = remaider === 0 ? "x" : remaider === 1 ? "y" : "z";
           const lineData = draft.curveEditorData[quotient][xyzChar];
           const updatedLineData = lineData.map<[number, number]>(([x, y]) => {
-            return [x - changedX, y - changedY];
+            return [x + changedX, y + changedY];
           });
           draft.curveEditorData[quotient][xyzChar] = updatedLineData;
         });
