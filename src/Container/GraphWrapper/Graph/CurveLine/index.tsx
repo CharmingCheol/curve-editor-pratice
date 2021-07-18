@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
   FunctionComponent,
+  RefObject,
 } from "react";
 import * as d3 from "d3";
 import { useDispatch } from "react-redux";
@@ -15,13 +16,14 @@ import {
   ClasifiedKeyframes,
   ClickedTarget,
   GraphValues,
+  PointXY,
 } from "types/curveEditor";
+import useDragCurveEditor from "Container/useDragCurveEditor";
 import { fnGetBinarySearch } from "utils";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
-import useDragCurveEditor from "Container/useDragCurveEditor";
 
 const cx = classNames.bind(styles);
 
@@ -31,20 +33,28 @@ interface Props {
   trackName: string;
   values: GraphValues[];
   xyzIndex: number;
+  graphRef: RefObject<SVGGElement>;
+  changeGraphTranslate: (cursor: PointXY) => void;
 }
 
 type PathData = [number, number, number]; // [timeIndex, y, keyframeIndex]
 
 const CurveLine: FunctionComponent<Props> = (props) => {
-  const { color, values, trackName, xyzIndex, lineIndex } = props;
+  const {
+    color,
+    values,
+    trackName,
+    xyzIndex,
+    lineIndex,
+    graphRef,
+    changeGraphTranslate,
+  } = props;
   const dispatch = useDispatch();
-  const pathRef = useRef<SVGPathElement>(null);
-  const pathData = useRef<PathData[]>([]);
   const isAlreadySelected = useRef(false);
+  const pathData = useRef<PathData[]>([]);
 
-  const [renderingCount, setRenderingCount] = useState(0);
+  const [changePathData, setChangePathData] = useState(0);
   const [selected, setSelected] = useState(false);
-  const [pathTransform, setPathTransform] = useState({ x: 0, y: 0 });
 
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
   const xyzType = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
@@ -69,13 +79,10 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   );
 
   // 커브라인 옵저버 호출
-  const callCurveLineObserver = useCallback(() => {
+  const registerCurveLineObserver = useCallback(() => {
     Observer.registerCurveLine({
       active: ({ x, y }) => {
-        setPathTransform((prevState) => ({
-          x: prevState.x - x,
-          y: prevState.y - y,
-        }));
+        changeGraphTranslate({ x, y });
         return lineIndex;
       },
       passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
@@ -88,7 +95,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
           const myKeyframes = clasifiedKeyframes[binaryIndex].keyframeData;
           myKeyframes.forEach((keyframe) => {
             const keyframeIndex = pathData.current.findIndex(
-              (line) => line[2] === keyframe.keyframeIndex // line[2] : keyframeIndex
+              (line) => line[2] === keyframe.keyframeIndex // line[2] = keyframeIndex
             );
             pathData.current[keyframeIndex] = [
               keyframe.timeIndex,
@@ -97,51 +104,41 @@ const CurveLine: FunctionComponent<Props> = (props) => {
             ];
           });
           pathData.current.sort((a: PathData, b: PathData) => a[0] - b[0]); // time index순으로 정렬
-          setRenderingCount((prev) => prev + 1);
+          setChangePathData((prev) => prev + 1);
         }
       },
     });
   }, [lineIndex]);
 
   useDragCurveEditor({
-    onDragging: ({ prevCursor, currentCursor }) => {
-      const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
-      const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
-      Observer.notifyCurveLines({ x: cursorGapX, y: cursorGapY }, "dragging");
+    onDragging: ({ cursorGap }) => {
+      Observer.notifyCurveLines(cursorGap, "dragging");
     },
-    onDragEnd: ({ prevCursor, currentCursor, event }) => {
-      const cursorGapX = prevCursor.x - currentCursor.x; // 직전 커서 x좌표 - 현재 커서 x좌표
-      const cursorGapY = prevCursor.y - currentCursor.y; // 직전 커서 y좌표 - 현재 커서 y좌표
-      const lineIndices = Observer.notifyCurveLines(
-        { x: cursorGapX, y: cursorGapY },
-        "dragend"
-      );
+    onDragEnd: ({ cursorGap }) => {
+      const lineIndices = Observer.notifyCurveLines({ x: 0, y: 0 }, "dragend");
       if (lineIndices) {
-        const invertX = Scale.getScaleX().invert;
-        const invertY = Scale.getScaleY().invert;
+        const [timeIndex, value] = values[0];
+        const scaleX = Scale.getScaleX();
+        const scaleY = Scale.getScaleY();
+        const invertX = scaleX.invert;
+        const invertY = scaleY.invert;
 
-        const { x: originX, y: originY } = event.subject;
-        const { x: lastX, y: lastY } = event;
-        const changedX = Math.round(invertX(originX) - invertX(lastX));
-        const changedY = invertY(originY) - invertY(lastY);
+        const circleX = scaleX(timeIndex) | 0;
+        const circleY = scaleY(value);
+        const changedX = Math.round(invertX(circleX + cursorGap.x)) - timeIndex;
+        const changedY = invertY(circleY + cursorGap.y) - value;
+
         const params = { changedX, changedY, lineIndices };
-
         dispatch(curveEditor.updateCurveEditorByCurveLine(params));
         Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       }
     },
-    ref: pathRef,
-    throttleTime: 75,
+    ref: graphRef,
   });
 
   // 커브라인 clicked state 변경
   useEffect(() => {
-    if (!clickedTarget) {
-      isAlreadySelected.current = false;
-      setPathTransform({ x: 0, y: 0 });
-      setSelected(false);
-      return;
-    }
+    if (!clickedTarget) return;
     const isClickedMe =
       clickedTarget.targetType === "curveLine" &&
       clickedTarget.trackName === trackName &&
@@ -153,12 +150,12 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     if (clickedTarget.ctrl) {
       if (isClickedMe || isClickedKeyframe || isAlreadySelected.current) {
         isAlreadySelected.current = true;
-        callCurveLineObserver();
+        registerCurveLineObserver();
         setSelected(true);
       }
     } else if (isClickedMe || isClickedKeyframe) {
       isAlreadySelected.current = true;
-      callCurveLineObserver();
+      registerCurveLineObserver();
       setSelected(true);
     } else if (clickedTarget.alt && clickedTarget.coordinates) {
       const times = pathData.current.map((data) => data[0]);
@@ -168,19 +165,19 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       });
       if (binaryIndex !== -1) {
         isAlreadySelected.current = true;
-        callCurveLineObserver();
+        registerCurveLineObserver();
         setSelected(true);
       }
     } else {
       isAlreadySelected.current = false;
       setSelected(false);
     }
-  }, [callCurveLineObserver, clickedTarget, lineIndex, trackName, xyzType]);
+  }, [registerCurveLineObserver, clickedTarget, lineIndex, trackName, xyzType]);
 
-  // values가 변경 될 경우 pathData 업데이트
   useEffect(() => {
     pathData.current = values.map((data, index) => [data[0], data[1], index]);
-    setRenderingCount((prev) => prev + 1);
+    setChangePathData((prev) => prev + 1);
+    setSelected(false);
   }, [values]);
 
   const pathShapes = useMemo(() => {
@@ -196,16 +193,14 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       data[1],
     ]);
     return lineGenerator(graphValues) as string;
-  }, [renderingCount]);
+  }, [changePathData]);
 
   return (
     <path
-      transform={`translate(${pathTransform.x}, ${pathTransform.y})`}
       className={cx({ selected })}
       fill="none"
       stroke={color}
       d={pathShapes}
-      ref={pathRef}
       onClick={handleClickCurveLine}
     />
   );
