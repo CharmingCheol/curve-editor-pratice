@@ -10,17 +10,18 @@ import React, {
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as curveEditor from "actions/curveEditor";
-import { ClickedTarget } from "types/curveEditor";
+import { ClickedTarget, KeyframeValues } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
+import BezierHandles from "./BezierHandles";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
 
 const cx = classNames.bind(styles);
 
 interface Props {
-  data: number[];
+  data: KeyframeValues;
   trackName: string;
   xyzType: "x" | "y" | "z";
   keyframeIndex: number;
@@ -29,7 +30,7 @@ interface Props {
 
 const Keyframe: FunctionComponent<Props> = (props) => {
   const { data, keyframeIndex, lineIndex, trackName, xyzType } = props;
-  const circlePosition = useRef({ circleX: 0, circleY: 0 });
+  const keyframePosition = useRef({ circleX: 0, circleY: 0 });
   const keyframeRef = useRef<SVGGElement>(null);
   const isAlreadySelected = useRef(false);
   const dispatch = useDispatch();
@@ -48,7 +49,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         xyzType,
         ctrl: event.ctrlKey || event.metaKey,
         alt: event.altKey,
-        coordinates: { x: data[0], y: data[1] },
+        coordinates: { x: data.keyframe.x, y: data.keyframe.y },
       };
       dispatch(
         curveEditor.changeClickedTarget({
@@ -63,16 +64,21 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   const registerKeyframeObserver = useCallback(() => {
     Observer.registerKeyframe({
       active: ({ x, y }) => {
-        const { circleX, circleY } = circlePosition.current;
         const invertScaleX = Scale.getScaleX().invert;
         const invertScaleY = Scale.getScaleY().invert;
-        const timeIndex = Math.round(invertScaleX(circleX + x));
+        const { circleX, circleY } = keyframePosition.current;
+        const time = Math.round(invertScaleX(circleX + x));
         const value = invertScaleY(circleY + y);
         setCircleTranslateXY({ x, y });
-        return { lineIndex, keyframeIndex, trackName, timeIndex, value };
+        return {
+          lineIndex,
+          keyframeIndex,
+          x: time,
+          y: value,
+        };
       },
     });
-  }, [keyframeIndex, lineIndex, trackName]);
+  }, [keyframeIndex, lineIndex]);
 
   // 키프레임 드래그, 드래그 종료
   useDragCurveEditor({
@@ -94,14 +100,13 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
     if (!clickedTarget) return;
-    const [timeIndex, value] = data;
+    const { x, y } = data.keyframe;
     const isClickedMe =
       clickedTarget.trackName === trackName &&
       clickedTarget.xyzType === xyzType &&
-      clickedTarget.coordinates?.x === timeIndex &&
-      clickedTarget.coordinates?.y === value;
-    const isAltClick =
-      clickedTarget.alt && clickedTarget.coordinates?.x === timeIndex;
+      clickedTarget.coordinates?.x === x &&
+      clickedTarget.coordinates?.y === y;
+    const isAltClick = clickedTarget.alt && clickedTarget.coordinates?.x === x;
     const isClickedCurveLine =
       clickedTarget.targetType === "curveLine" &&
       clickedTarget.trackName === trackName &&
@@ -133,9 +138,9 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   const circleXY = useMemo(() => {
     const scaleX = Scale.getScaleX();
     const scaleY = Scale.getScaleY();
-    const circleX = scaleX(data[0]) | 0;
-    const circleY = scaleY(data[1]);
-    circlePosition.current = { circleX, circleY };
+    const circleX = scaleX(data.keyframe.x) | 0;
+    const circleY = scaleY(data.keyframe.y);
+    keyframePosition.current = { circleX, circleY };
     return { x: circleX, y: circleY };
   }, [data]);
 
@@ -145,12 +150,13 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       transform={`translate(${circleTranslateXY.x}, ${circleTranslateXY.y})`}
     >
       <circle
-        r={2}
+        r={1.5}
         cx={circleXY.x}
         cy={circleXY.y}
         className={cx({ clicked })}
         onClick={handleClickKeyframe}
       />
+      {clicked && <BezierHandles data={data} />}
     </g>
   );
 };

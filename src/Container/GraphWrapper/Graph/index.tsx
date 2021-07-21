@@ -1,12 +1,12 @@
 import React, { useCallback, useRef, useState, FunctionComponent } from "react";
-import { GraphValues, PointXY } from "types/curveEditor";
+import { KeyframeValues, Coordinates } from "types/curveEditor";
 import CurveLine from "./CurveLine";
 import KeyframeGroup from "./KeyframeGroup";
 
 interface Props {
   trackName: string;
   lineIndex: number;
-  values: GraphValues[];
+  values: KeyframeValues[];
   xyzIndex: number;
 }
 
@@ -16,7 +16,7 @@ const Graph: FunctionComponent<Props> = (props) => {
   const graphRef = useRef<SVGGElement>(null);
   const [graphTranslateXY, setGraphTranslateXY] = useState({ x: 0, y: 0 });
 
-  const changeGraphTranslate = useCallback(({ x, y }: PointXY) => {
+  const changeGraphTranslate = useCallback(({ x, y }: Coordinates) => {
     setGraphTranslateXY({ x, y });
   }, []);
 

@@ -123,8 +123,8 @@ const AxisWrapper: FunctionComponent<Props> = (props) => {
       <g ref={xAxisRef} className={cx("x-axis")} />
       <g ref={yAxisRef} className={cx("y-axis")} />
       <g>
-        <g ref={xGridRef} />
-        <g ref={yGridRef} />
+        <g ref={xGridRef} className={cx("grid")} />
+        <g ref={yGridRef} className={cx("grid")} />
       </g>
     </Fragment>
   );
