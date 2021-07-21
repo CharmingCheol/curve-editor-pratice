@@ -1,18 +1,20 @@
 import { fnGetBinarySearch } from "utils";
-import { PointXY, KeyframeData, ClasifiedKeyframes } from "types/curveEditor";
+import {
+  Coordinates,
+  ClasifiedKeyframes,
+  KeyframeCoordinates,
+} from "types/curveEditor";
 
-interface SelectedKeyframes extends KeyframeData {
+interface SelectedKeyframes extends KeyframeCoordinates {
   lineIndex: number;
-  trackName: string;
 }
 
 interface RegisterKeyframe {
-  active: (cursorGap: PointXY) => SelectedKeyframes; // 키프레임 선택
-  // passive: (cursorGap: PointXY) => void;
+  active: (cursorGap: Coordinates) => SelectedKeyframes; // 키프레임 선택
 }
 
 interface RegisterCurveLine {
-  active: (cursorGap: PointXY) => number; // 커브라인 선택
+  active: (cursorGap: Coordinates) => number; // 커브라인 선택
   passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => void; // 키프레임 선택에 의해 커브라인도 선택 됨
 }
 
@@ -38,7 +40,7 @@ class Observer {
 
   // keyframe 호출 시, curve line도 같이 호출
   static notifyKeyframes(params: {
-    cursorGap: PointXY;
+    cursorGap: Coordinates;
     dragType: "dragging" | "dragend";
   }) {
     const { cursorGap, dragType } = params;
@@ -48,7 +50,7 @@ class Observer {
     const clasifiedKeyframes: ClasifiedKeyframes[] = [];
     for (let index = 0; index < selectedKeyframes.length; index += 1) {
       const keyframeData = selectedKeyframes[index];
-      const { lineIndex } = keyframeData;
+      const { lineIndex, ...others } = keyframeData;
       const binaryIndex = fnGetBinarySearch({
         collection: clasifiedKeyframes,
         index: lineIndex,
@@ -57,10 +59,10 @@ class Observer {
       if (binaryIndex === -1) {
         clasifiedKeyframes.push({
           lineIndex: lineIndex,
-          keyframeData: [keyframeData],
+          keyframeData: [others],
         });
       } else {
-        clasifiedKeyframes[binaryIndex].keyframeData.push(keyframeData);
+        clasifiedKeyframes[binaryIndex].keyframeData.push(others);
       }
     }
     if (clasifiedKeyframes.length) {
@@ -74,7 +76,7 @@ class Observer {
 
   // curve line 호출 시, keyframe도 같이 호출
   static notifyCurveLines(
-    cursorGap: PointXY,
+    cursorGap: Coordinates,
     dragType: "dragging" | "dragend"
   ) {
     if (dragType === "dragging") {

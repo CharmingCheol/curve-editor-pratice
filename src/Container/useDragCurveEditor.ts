@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, RefObject } from "react";
 import * as d3 from "d3";
 import _ from "lodash";
-import { PointXY } from "types/curveEditor";
+import { Coordinates } from "types/curveEditor";
 import Scale from "Container/scale";
 
 interface DragProps {
-  cursorGap: PointXY;
+  cursorGap: Coordinates;
   event: any;
 }
 

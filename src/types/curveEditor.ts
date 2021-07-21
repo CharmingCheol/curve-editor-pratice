@@ -1,6 +1,19 @@
+export interface Coordinates {
+  x: number;
+  y: number;
+}
+
+export interface KeyframeCoordinates extends Coordinates {
+  keyframeIndex: number;
+}
+
+export interface KeyframeValues {
+  handles: { left: Coordinates; right: Coordinates };
+  keyframe: KeyframeCoordinates;
+}
 export interface ClickedTarget {
   alt?: boolean;
-  coordinates?: PointXY;
+  coordinates?: Coordinates;
   ctrl?: boolean;
   targetType: "curveLine" | "keyframe";
   trackName: string;
@@ -11,26 +24,12 @@ export interface CurveEditorData {
   interpolation: string;
   isIncluded: boolean;
   trackName: string;
-  x: GraphValues[];
-  y: GraphValues[];
-  z: GraphValues[];
-}
-
-export interface KeyframeData {
-  keyframeIndex: number;
-  timeIndex: number;
-  trackName: string;
-  value: number;
+  x: KeyframeValues[];
+  y: KeyframeValues[];
+  z: KeyframeValues[];
 }
 
 export interface ClasifiedKeyframes {
+  keyframeData: KeyframeCoordinates[];
   lineIndex: number;
-  keyframeData: KeyframeData[];
 }
-
-export interface PointXY {
-  x: number;
-  y: number;
-}
-
-export type GraphValues = [number, number]; // [timeIndex, value]

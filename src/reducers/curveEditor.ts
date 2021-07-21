@@ -1,5 +1,9 @@
 import produce from "immer";
-import { ClickedTarget, CurveEditorData } from "types/curveEditor";
+import {
+  ClickedTarget,
+  CurveEditorData,
+  KeyframeValues,
+} from "types/curveEditor";
 import { CurveEditorAction } from "actions/curveEditor";
 import Observer from "Container/observer";
 import helper from "./helper";
@@ -48,13 +52,13 @@ export const curveEditor = (
         ) => {
           const xyz = draft.curveEditorData[lineIndex][xyzChar];
           for (let index = 0; index < xyz.length; index += 1) {
-            const target = xyz[index];
+            const target = xyz[index].keyframe;
             if (
               index !== keyframeIndex && // 자신의 키프레임이 아니고
-              target[0] === timeIndex && // timeIndex는 같으면서
-              target[1] !== 0 // y값이 0이 아닌 경우
+              target.x === timeIndex && // timeIndex는 같으면서
+              target.y !== 0 // y값이 0이 아닌 경우
             ) {
-              xyz[index] = [0, 0];
+              xyz[index].keyframe = { x: 0, y: 0, keyframeIndex: 0 };
               break;
             }
           }
@@ -67,14 +71,19 @@ export const curveEditor = (
           const values = getAmongXYZ(lineIndex, xyzIndex);
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           if (values) {
-            keyframeData.forEach(({ keyframeIndex, timeIndex, value }) => {
-              values[keyframeIndex] = [timeIndex, value];
-              setKeyframeDelete(lineIndex, timeIndex, keyframeIndex, xyzChar);
+            keyframeData.forEach(({ keyframeIndex, x, y }) => {
+              values[keyframeIndex].keyframe = { keyframeIndex, x, y };
+              values[keyframeIndex].handles.left = { x: x - 0.3, y };
+              values[keyframeIndex].handles.right = { x: x + 0.3, y };
+              setKeyframeDelete(lineIndex, x, keyframeIndex, xyzChar);
             });
-            values.sort((a, b) => a[0] - b[0]);
+            values.sort((a, b) => a.keyframe.x - b.keyframe.x);
             const filterdValues = values.filter(
-              ([time, y]) => time !== 0 || y !== 0
+              ({ keyframe }) => keyframe.x !== 0 || keyframe.y !== 0
             );
+            for (let index = 0; index < filterdValues.length; index += 1) {
+              filterdValues[index].keyframe.keyframeIndex = index;
+            }
             draft.curveEditorData[lineIndex][xyzChar] = filterdValues;
           }
         });
@@ -89,9 +98,21 @@ export const curveEditor = (
           const remaider = lineIndex % 3;
           const xyzChar = remaider === 0 ? "x" : remaider === 1 ? "y" : "z";
           const lineData = draft.curveEditorData[quotient][xyzChar];
-          const updatedLineData = lineData.map<[number, number]>(([x, y]) => {
-            return [x + changedX, y + changedY];
-          });
+          const updatedLineData = lineData.map<KeyframeValues>(
+            ({ keyframe, handles: { left, right } }) => {
+              return {
+                keyframe: {
+                  keyframeIndex: keyframe.keyframeIndex,
+                  x: keyframe.x + changedX,
+                  y: keyframe.y + changedY,
+                },
+                handles: {
+                  left: { x: left.x + changedX, y: left.y + changedY },
+                  right: { x: right.x + changedX, y: right.y + changedY },
+                },
+              };
+            }
+          );
           draft.curveEditorData[quotient][xyzChar] = updatedLineData;
         });
         draft.clickedTarget = null;
