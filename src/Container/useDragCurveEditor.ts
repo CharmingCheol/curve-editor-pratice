@@ -15,21 +15,35 @@ interface Props {
   onDragEnd: (dragProps: DragProps) => void;
   ref: RefObject<Element>;
   throttleTime?: number;
+  isClampX?: boolean;
 }
 
 const useDragCurveEditor = (props: Props) => {
-  const { filterFn, onDragging, onDragEnd, ref, throttleTime = 50 } = props;
+  const {
+    filterFn,
+    onDragging,
+    onDragEnd,
+    ref,
+    throttleTime = 50,
+    isClampX = true,
+  } = props;
   const isDragging = useRef(false);
 
   // 현재 커서 계산 - 직전 커서 위치 계산
   const getCursorGapXY = (event: any) => {
-    const scaleX = Scale.getScaleX();
-    const originTimeIndex = Math.round(scaleX.invert(event.subject.x));
-    const currentTimeIndex = Math.round(scaleX.invert(event.x));
-    const originX = scaleX(originTimeIndex);
-    const currentX = scaleX(currentTimeIndex);
+    if (isClampX) {
+      const scaleX = Scale.getScaleX();
+      const originX = scaleX.invert(event.subject.x);
+      const currentX = scaleX.invert(event.x);
+      const roundOriginX = scaleX(Math.round(originX));
+      const roundCurrentX = scaleX(Math.round(currentX));
+      return {
+        x: roundOriginX - roundCurrentX,
+        y: event.y - event.subject.y,
+      };
+    }
     return {
-      x: currentX - originX,
+      x: event.x - event.subject.x,
       y: event.y - event.subject.y,
     };
   };
