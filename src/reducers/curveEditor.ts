@@ -72,9 +72,18 @@ export const curveEditor = (
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           if (values) {
             keyframeData.forEach(({ keyframeIndex, x, y }) => {
+              const leftHandleY = values[keyframeIndex].handles.left.y;
+              const rightHandleY = values[keyframeIndex].handles.right.y;
+              const keyframeY = values[keyframeIndex].keyframe.y;
               values[keyframeIndex].keyframe = { keyframeIndex, x, y };
-              values[keyframeIndex].handles.left = { x: x - 0.3, y };
-              values[keyframeIndex].handles.right = { x: x + 0.3, y };
+              values[keyframeIndex].handles.left = {
+                x: x - 0.3,
+                y: leftHandleY - (keyframeY - y),
+              };
+              values[keyframeIndex].handles.right = {
+                x: x + 0.3,
+                y: rightHandleY - (keyframeY - y),
+              };
               setKeyframeDelete(lineIndex, x, keyframeIndex, xyzChar);
             });
             values.sort((a, b) => a.keyframe.x - b.keyframe.x);
