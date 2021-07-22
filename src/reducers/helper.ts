@@ -2,7 +2,7 @@ import { KeyframeValues, CurveEditorData } from "types/curveEditor";
 import dummy from "../dummy.json";
 
 const curveEditorDataHelper = (): CurveEditorData[] => {
-  return dummy.baseLayer.slice(0, 1).map((data, lineIndex) => {
+  return dummy.baseLayer.slice(0, 12).map((data) => {
     const x: KeyframeValues[] = [];
     const y: KeyframeValues[] = [];
     const z: KeyframeValues[] = [];
