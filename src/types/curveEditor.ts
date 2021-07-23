@@ -11,14 +11,6 @@ export interface KeyframeValues {
   handles: { left: Coordinates; right: Coordinates };
   keyframe: KeyframeCoordinates;
 }
-export interface ClickedTarget {
-  alt?: boolean;
-  coordinates?: Coordinates;
-  ctrl?: boolean;
-  targetType: "curveLine" | "keyframe";
-  trackName: string;
-  xyzType: "x" | "y" | "z";
-}
 
 export interface CurveEditorData {
   interpolation: string;
@@ -32,4 +24,13 @@ export interface CurveEditorData {
 export interface ClasifiedKeyframes {
   keyframeData: KeyframeCoordinates[];
   lineIndex: number;
+}
+
+export interface ClickedTarget {
+  alt?: boolean;
+  coordinates?: Coordinates;
+  ctrl?: boolean;
+  targetType: "curveLine" | "keyframe";
+  trackName: string;
+  xyzType: "x" | "y" | "z";
 }

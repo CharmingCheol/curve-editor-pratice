@@ -18,24 +18,36 @@ interface RegisterCurveLine {
   passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => void; // 키프레임 선택에 의해 커브라인도 선택 됨
 }
 
+interface RegisterBezierHandle {
+  left: (cursorGap: Coordinates) => void;
+  right: (cursorGap: Coordinates) => void;
+}
+
 class Observer {
   private static keyframes: RegisterKeyframe[] = [];
   private static curveLines: RegisterCurveLine[] = [];
+  private static bezierHandles: RegisterBezierHandle[] = [];
 
   // 옵저버 리스트 초기화
   static clearObservers() {
     this.keyframes.length = 0;
     this.curveLines.length = 0;
+    this.bezierHandles.length = 0;
   }
 
-  // 리스트에 클릭 된 키프레임 추가
+  // 선택 된 keyframe 등록
   static registerKeyframe(target: RegisterKeyframe) {
     this.keyframes.push(target);
   }
 
-  // 리스트에 클릭 된 커브 라인 추가
+  // 선택 된 curve 등록
   static registerCurveLine(target: RegisterCurveLine) {
     this.curveLines.push(target);
+  }
+
+  // 선택 된 bezier handle 등록
+  static registerBezierHandle(target: RegisterBezierHandle) {
+    this.bezierHandles.push(target);
   }
 
   // keyframe 호출 시, curve line도 같이 호출
@@ -84,6 +96,23 @@ class Observer {
     } else if (dragType === "dragend") {
       return this.curveLines.map(({ active }) => active(cursorGap));
     }
+  }
+
+  // bezier handle 호출
+  static notifyBezierHandles(
+    cursorGap: Coordinates,
+    handleType: "left" | "right"
+  ) {
+    this.bezierHandles.forEach((bezierHandle) => {
+      switch (handleType) {
+        case "left":
+          bezierHandle.left(cursorGap);
+          break;
+        case "right":
+          bezierHandle.right(cursorGap);
+          break;
+      }
+    });
   }
 }
 
