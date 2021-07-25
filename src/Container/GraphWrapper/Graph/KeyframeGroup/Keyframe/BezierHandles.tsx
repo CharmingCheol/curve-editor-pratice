@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import * as d3 from "d3";
 import { useSelector } from "reducers";
-import { Coordinates, KeyframeValues } from "types/curveEditor";
+import { KeyframeValues } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
@@ -16,13 +16,6 @@ import Observer from "Container/observer";
 interface Props {
   data: KeyframeValues;
   lineIndex: number;
-}
-
-interface BezierHandleParams {
-  cursorGap: Coordinates;
-  dragType: "dragging" | "dragend";
-  handleType: "left" | "right";
-  isUnifiedHandles: boolean;
 }
 
 const BezierHandles: FunctionComponent<Props> = (props) => {
@@ -43,31 +36,37 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
         cursorGap,
         dragType: "dragging",
         handleType: "left",
-        isUnifiedHandles: true,
       });
     },
-    onDragEnd: () => {
-      console.log("left circle drag end");
+    onDragEnd: ({ cursorGap }) => {
+      const bezierHandles = Observer.notifyBezierHandles({
+        cursorGap,
+        dragType: "dragend",
+        handleType: "left",
+      });
+      console.log("left circle drag end", bezierHandles);
     },
     ref: leftCircleRef,
     isClampX: false, // 커서 위치에 따라 handle의 x좌표를 조절
+    throttleTime: 100,
   });
 
   // 우측 handle circle 이벤트
   useDragCurveEditor({
     onDragging: ({ cursorGap }) => {
-      Observer.notifyBezierHandles({
+      const bezierHandles = Observer.notifyBezierHandles({
         cursorGap,
-        dragType: "dragging",
+        dragType: "dragend",
         handleType: "right",
-        isUnifiedHandles: true,
       });
+      console.log("right circle drag end", bezierHandles);
     },
     onDragEnd: () => {
       console.log("right circle drag end");
     },
     ref: rightCircleRef,
     isClampX: false, // 커서 위치에 따라 handle의 x좌표를 조절
+    throttleTime: 100,
   });
 
   // 좌우측 handle line 드래그 시, 아무런 반응 없도록 처리
@@ -92,13 +91,34 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
           const rightY = invertScaleY(scaleY(data.handles.right.y) - y);
           setLeftCircleXY({ ...{ x: leftX, y: leftY } });
           setRightCircleXY({ ...{ x: rightX, y: rightY } });
-          return {
-            x: leftX,
-            y: leftY,
-            keyframeIndex: data.keyframe.keyframeIndex,
-            lineIndex,
-            dotType: "handle",
-          };
+          /** ToDo
+           * unify tangent / Break Tangent 버튼 클릭 시, Handle 처리 구현
+           */
+          // return {
+          //   x: leftX,
+          //   y: leftY,
+          //   keyframeIndex: data.keyframe.keyframeIndex,
+          //   lineIndex,
+          //   dotType: "handle",
+          //   handleType: "left",
+          // };
+          return [
+            {
+              x: leftX,
+              y: leftY,
+              keyframeIndex: data.keyframe.keyframeIndex,
+              lineIndex,
+              dotType: "handle",
+              handleType: "left",
+            },
+            {
+              x: rightX,
+              y: rightY,
+              keyframeIndex: data.keyframe.keyframeIndex,
+              lineIndex,
+              handleType: "right",
+            },
+          ];
         },
         right: ({ cursorGap: { x, y } }) => {
           const rightX = invertScaleX(scaleX(data.handles.right.x) + x);
@@ -107,13 +127,29 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
           const leftY = invertScaleY(scaleY(data.handles.left.y) - y);
           setLeftCircleXY({ ...{ x: leftX, y: leftY } });
           setRightCircleXY({ ...{ x: rightX, y: rightY } });
-          return {
-            x: rightX,
-            y: rightY,
-            keyframeIndex: data.keyframe.keyframeIndex,
-            lineIndex,
-            dotType: "handle",
-          };
+          // return {
+          //   x: rightX,
+          //   y: rightY,
+          //   keyframeIndex: data.keyframe.keyframeIndex,
+          //   lineIndex,
+          //   handleType: "right",
+          // };
+          return [
+            {
+              x: leftX,
+              y: leftY,
+              keyframeIndex: data.keyframe.keyframeIndex,
+              lineIndex,
+              handleType: "left",
+            },
+            {
+              x: rightX,
+              y: rightY,
+              keyframeIndex: data.keyframe.keyframeIndex,
+              lineIndex,
+              handleType: "right",
+            },
+          ];
         },
       });
     }

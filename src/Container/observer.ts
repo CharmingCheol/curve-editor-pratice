@@ -7,14 +7,13 @@ import {
 
 interface SelectedKeyframes extends KeyframeCoordinates {
   lineIndex: number;
-  dotType: "keyframe" | "handle";
+  handleType?: "left" | "right";
 }
 
 interface BezierHandleParams {
   cursorGap: Coordinates;
   dragType: "dragging" | "dragend";
   handleType: "left" | "right";
-  isUnifiedHandles: boolean;
 }
 
 interface RegisterKeyframe {
@@ -27,8 +26,10 @@ interface RegisterCurveLine {
 }
 
 interface RegisterBezierHandle {
-  left: (params: BezierHandleParams) => SelectedKeyframes;
-  right: (params: BezierHandleParams) => SelectedKeyframes;
+  left: (params: BezierHandleParams) => [SelectedKeyframes, SelectedKeyframes];
+  right: (params: BezierHandleParams) => [SelectedKeyframes, SelectedKeyframes];
+  // left: (params: BezierHandleParams) => SelectedKeyframes;
+  // right: (params: BezierHandleParams) => SelectedKeyframes;
 }
 
 class Observer {
@@ -80,6 +81,7 @@ class Observer {
         clasifiedKeyframes.push({
           lineIndex: lineIndex,
           keyframeData: [others],
+          dotType: "keyframe",
         });
       } else {
         clasifiedKeyframes[binaryIndex].keyframeData.push(others);
@@ -109,14 +111,16 @@ class Observer {
   // bezier handle 호출
   static notifyBezierHandles(params: BezierHandleParams) {
     const { dragType, handleType } = params;
-    const draggedBezierHandles = this.bezierHandles.map((bezierHandle) => {
-      switch (handleType) {
-        case "left":
-          return bezierHandle.left(params);
-        case "right":
-          return bezierHandle.right(params);
-      }
-    });
+    const draggedBezierHandles = this.bezierHandles
+      .map((bezierHandle) => {
+        switch (handleType) {
+          case "left":
+            return bezierHandle.left(params);
+          case "right":
+            return bezierHandle.right(params);
+        }
+      })
+      .flat();
     const clasifiedBezierHandles: ClasifiedKeyframes[] = [];
     for (let index = 0; index < draggedBezierHandles.length; index += 1) {
       const keyframeData = draggedBezierHandles[index];
@@ -130,15 +134,19 @@ class Observer {
         clasifiedBezierHandles.push({
           lineIndex: lineIndex,
           keyframeData: [others],
+          dotType: "handle",
         });
       } else {
         clasifiedBezierHandles[binaryIndex].keyframeData.push(others);
       }
     }
     if (clasifiedBezierHandles.length) {
-      console.log(clasifiedBezierHandles);
       if (dragType === "dragging") {
+        this.curveLines.forEach(({ passive }) =>
+          passive(clasifiedBezierHandles)
+        );
       } else if (dragType === "dragend") {
+        return clasifiedBezierHandles;
       }
     }
   }

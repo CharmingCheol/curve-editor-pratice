@@ -5,6 +5,7 @@ export interface Coordinates {
 
 export interface KeyframeCoordinates extends Coordinates {
   keyframeIndex: number;
+  handleType?: "left" | "right";
 }
 
 export interface KeyframeValues {
@@ -24,6 +25,7 @@ export interface CurveEditorData {
 export interface ClasifiedKeyframes {
   keyframeData: KeyframeCoordinates[];
   lineIndex: number;
+  dotType: "keyframe" | "handle";
 }
 
 export interface ClickedTarget {

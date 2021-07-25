@@ -88,10 +88,12 @@ const CurveLine: FunctionComponent<Props> = (props) => {
           index: lineIndex,
           key: "lineIndex",
         });
-        if (binaryIndex !== -1) {
+        if (binaryIndex !== -1 && pathData.current) {
+          const dotType = clasifiedKeyframes[binaryIndex].dotType;
           const myKeyframes = clasifiedKeyframes[binaryIndex].keyframeData;
-          myKeyframes.forEach(({ x, y, keyframeIndex }) => {
-            if (pathData.current) {
+          if (dotType === "keyframe") {
+            for (let index = 0; index < myKeyframes.length; index += 1) {
+              const { x, y, keyframeIndex } = myKeyframes[index];
               const targetIndex = pathData.current.findIndex(
                 ({ keyframe }) => keyframe.keyframeIndex === keyframeIndex
               );
@@ -105,8 +107,18 @@ const CurveLine: FunctionComponent<Props> = (props) => {
                 right: { x: x + 0.3, y: y },
               };
             }
-          });
-          pathData.current?.sort((a, b) => a.keyframe.x - b.keyframe.x);
+            pathData.current?.sort((a, b) => a.keyframe.x - b.keyframe.x);
+          } else if (dotType === "handle") {
+            for (let index = 0; index < myKeyframes.length; index += 1) {
+              const { x, y, keyframeIndex, handleType } = myKeyframes[index];
+              const targetIndex = pathData.current.findIndex(
+                ({ keyframe }) => keyframe.keyframeIndex === keyframeIndex
+              );
+              if (handleType) {
+                pathData.current[targetIndex].handles[handleType] = { x, y };
+              }
+            }
+          }
           setChangePathData((prev) => prev + 1);
         }
       },
