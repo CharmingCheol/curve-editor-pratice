@@ -7,6 +7,14 @@ import {
 
 interface SelectedKeyframes extends KeyframeCoordinates {
   lineIndex: number;
+  dotType: "keyframe" | "handle";
+}
+
+interface BezierHandleParams {
+  cursorGap: Coordinates;
+  dragType: "dragging" | "dragend";
+  handleType: "left" | "right";
+  isUnifiedHandles: boolean;
 }
 
 interface RegisterKeyframe {
@@ -19,8 +27,8 @@ interface RegisterCurveLine {
 }
 
 interface RegisterBezierHandle {
-  left: (cursorGap: Coordinates) => void;
-  right: (cursorGap: Coordinates) => void;
+  left: (params: BezierHandleParams) => SelectedKeyframes;
+  right: (params: BezierHandleParams) => SelectedKeyframes;
 }
 
 class Observer {
@@ -99,20 +107,40 @@ class Observer {
   }
 
   // bezier handle 호출
-  static notifyBezierHandles(
-    cursorGap: Coordinates,
-    handleType: "left" | "right"
-  ) {
-    this.bezierHandles.forEach((bezierHandle) => {
+  static notifyBezierHandles(params: BezierHandleParams) {
+    const { dragType, handleType } = params;
+    const draggedBezierHandles = this.bezierHandles.map((bezierHandle) => {
       switch (handleType) {
         case "left":
-          bezierHandle.left(cursorGap);
-          break;
+          return bezierHandle.left(params);
         case "right":
-          bezierHandle.right(cursorGap);
-          break;
+          return bezierHandle.right(params);
       }
     });
+    const clasifiedBezierHandles: ClasifiedKeyframes[] = [];
+    for (let index = 0; index < draggedBezierHandles.length; index += 1) {
+      const keyframeData = draggedBezierHandles[index];
+      const { lineIndex, ...others } = keyframeData;
+      const binaryIndex = fnGetBinarySearch({
+        collection: clasifiedBezierHandles,
+        index: lineIndex,
+        key: "lineIndex",
+      });
+      if (binaryIndex === -1) {
+        clasifiedBezierHandles.push({
+          lineIndex: lineIndex,
+          keyframeData: [others],
+        });
+      } else {
+        clasifiedBezierHandles[binaryIndex].keyframeData.push(others);
+      }
+    }
+    if (clasifiedBezierHandles.length) {
+      console.log(clasifiedBezierHandles);
+      if (dragType === "dragging") {
+      } else if (dragType === "dragend") {
+      }
+    }
   }
 }
 

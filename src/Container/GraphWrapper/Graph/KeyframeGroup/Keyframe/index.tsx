@@ -75,6 +75,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
           keyframeIndex,
           x: time,
           y: value,
+          dotType: "keyframe",
         };
       },
     });
@@ -156,7 +157,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         className={cx({ clicked })}
         onClick={handleClickKeyframe}
       />
-      {clicked && <BezierHandles data={data} />}
+      {clicked && <BezierHandles data={data} lineIndex={lineIndex} />}
     </g>
   );
 };

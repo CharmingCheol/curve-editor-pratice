@@ -8,17 +8,25 @@ import React, {
 } from "react";
 import * as d3 from "d3";
 import { useSelector } from "reducers";
-import { KeyframeValues } from "types/curveEditor";
+import { Coordinates, KeyframeValues } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
 
 interface Props {
   data: KeyframeValues;
+  lineIndex: number;
+}
+
+interface BezierHandleParams {
+  cursorGap: Coordinates;
+  dragType: "dragging" | "dragend";
+  handleType: "left" | "right";
+  isUnifiedHandles: boolean;
 }
 
 const BezierHandles: FunctionComponent<Props> = (props) => {
-  const { data } = props;
+  const { data, lineIndex } = props;
   const leftLineRef = useRef<SVGPathElement>(null);
   const leftCircleRef = useRef<SVGCircleElement>(null);
   const rightLineRef = useRef<SVGPathElement>(null);
@@ -31,7 +39,12 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
   // 좌측 handle circle 이벤트
   useDragCurveEditor({
     onDragging: ({ cursorGap }) => {
-      Observer.notifyBezierHandles(cursorGap, "left");
+      Observer.notifyBezierHandles({
+        cursorGap,
+        dragType: "dragging",
+        handleType: "left",
+        isUnifiedHandles: true,
+      });
     },
     onDragEnd: () => {
       console.log("left circle drag end");
@@ -43,7 +56,12 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
   // 우측 handle circle 이벤트
   useDragCurveEditor({
     onDragging: ({ cursorGap }) => {
-      Observer.notifyBezierHandles(cursorGap, "right");
+      Observer.notifyBezierHandles({
+        cursorGap,
+        dragType: "dragging",
+        handleType: "right",
+        isUnifiedHandles: true,
+      });
     },
     onDragEnd: () => {
       console.log("right circle drag end");
@@ -67,19 +85,39 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
       const invertScaleX = scaleX.invert;
       const invertScaleY = scaleY.invert;
       Observer.registerBezierHandle({
-        left: ({ x, y }) => {
+        left: ({ cursorGap: { x, y } }) => {
           const leftX = invertScaleX(scaleX(data.handles.left.x) + x);
           const leftY = invertScaleY(scaleY(data.handles.left.y) + y);
+          const rightX = invertScaleX(scaleX(data.handles.right.x) - x);
+          const rightY = invertScaleY(scaleY(data.handles.right.y) - y);
           setLeftCircleXY({ ...{ x: leftX, y: leftY } });
+          setRightCircleXY({ ...{ x: rightX, y: rightY } });
+          return {
+            x: leftX,
+            y: leftY,
+            keyframeIndex: data.keyframe.keyframeIndex,
+            lineIndex,
+            dotType: "handle",
+          };
         },
-        right: ({ x, y }) => {
+        right: ({ cursorGap: { x, y } }) => {
           const rightX = invertScaleX(scaleX(data.handles.right.x) + x);
           const rightY = invertScaleY(scaleY(data.handles.right.y) + y);
+          const leftX = invertScaleX(scaleX(data.handles.left.x) - x);
+          const leftY = invertScaleY(scaleY(data.handles.left.y) - y);
+          setLeftCircleXY({ ...{ x: leftX, y: leftY } });
           setRightCircleXY({ ...{ x: rightX, y: rightY } });
+          return {
+            x: rightX,
+            y: rightY,
+            keyframeIndex: data.keyframe.keyframeIndex,
+            lineIndex,
+            dotType: "handle",
+          };
         },
       });
     }
-  }, [clickedTarget, data]);
+  }, [clickedTarget, data, lineIndex]);
 
   const handlePosition = useMemo(() => {
     const scaleX = Scale.getScaleX();
