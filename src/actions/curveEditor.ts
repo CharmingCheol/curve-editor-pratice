@@ -55,3 +55,20 @@ export const updateCurveEditorByCurveLine = (
     ...params,
   },
 });
+
+// bezier handle 드래그 시, curve editor 데이터 업데이트
+interface UpdateCurveEditorByBezierHandle {
+  bezierHandles: ClasifiedKeyframes[];
+}
+
+export const UPDATE_CURVE_EDITOR_BY_BEZIER_HANDLE =
+  "curveEditor/UPDATE_CURVE_EDITOR_BY_BEZIER_HANDLE" as const;
+
+export const updateCurveEditorByBezierHandle = (
+  params: UpdateCurveEditorByBezierHandle
+) => ({
+  type: UPDATE_CURVE_EDITOR_BY_BEZIER_HANDLE,
+  payload: {
+    ...params,
+  },
+});

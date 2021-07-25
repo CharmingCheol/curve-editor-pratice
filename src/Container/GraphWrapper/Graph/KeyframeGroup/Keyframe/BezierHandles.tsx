@@ -44,7 +44,6 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
         dragType: "dragend",
         handleType: "left",
       });
-      console.log("left circle drag end", bezierHandles);
     },
     ref: leftCircleRef,
     isClampX: false, // 커서 위치에 따라 handle의 x좌표를 조절
@@ -56,10 +55,9 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
     onDragging: ({ cursorGap }) => {
       const bezierHandles = Observer.notifyBezierHandles({
         cursorGap,
-        dragType: "dragend",
+        dragType: "dragging",
         handleType: "right",
       });
-      console.log("right circle drag end", bezierHandles);
     },
     onDragEnd: () => {
       console.log("right circle drag end");
