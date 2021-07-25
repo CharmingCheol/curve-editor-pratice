@@ -38,7 +38,7 @@ const useDragCurveEditor = (props: Props) => {
       const roundOriginX = scaleX(Math.round(originX));
       const roundCurrentX = scaleX(Math.round(currentX));
       return {
-        x: roundOriginX - roundCurrentX,
+        x: roundCurrentX - roundOriginX,
         y: event.y - event.subject.y,
       };
     }
