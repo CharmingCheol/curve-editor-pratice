@@ -28,8 +28,6 @@ interface RegisterCurveLine {
 interface RegisterBezierHandle {
   left: (params: BezierHandleParams) => [SelectedKeyframes, SelectedKeyframes];
   right: (params: BezierHandleParams) => [SelectedKeyframes, SelectedKeyframes];
-  // left: (params: BezierHandleParams) => SelectedKeyframes;
-  // right: (params: BezierHandleParams) => SelectedKeyframes;
 }
 
 class Observer {

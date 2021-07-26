@@ -6,9 +6,10 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useDispatch } from "react-redux";
 import * as d3 from "d3";
-import { useSelector } from "reducers";
-import { KeyframeValues } from "types/curveEditor";
+import * as curveEditorAction from "actions/curveEditor";
+import { ClickedTarget, KeyframeValues } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
@@ -16,10 +17,12 @@ import Observer from "Container/observer";
 interface Props {
   data: KeyframeValues;
   lineIndex: number;
+  clickedTarget: ClickedTarget | null;
 }
 
 const BezierHandles: FunctionComponent<Props> = (props) => {
-  const { data, lineIndex } = props;
+  const { data, lineIndex, clickedTarget } = props;
+  const dispatch = useDispatch();
   const leftLineRef = useRef<SVGPathElement>(null);
   const leftCircleRef = useRef<SVGCircleElement>(null);
   const rightLineRef = useRef<SVGPathElement>(null);
@@ -27,7 +30,6 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
 
   const [leftCircleXY, setLeftCircleXY] = useState(data.handles.left);
   const [rightCircleXY, setRightCircleXY] = useState(data.handles.right);
-  const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
 
   // 좌측 handle circle 이벤트
   useDragCurveEditor({
@@ -44,6 +46,11 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
         dragType: "dragend",
         handleType: "left",
       });
+      if (bezierHandles) {
+        dispatch(
+          curveEditorAction.updateCurveEditorByBezierHandle({ bezierHandles })
+        );
+      }
     },
     ref: leftCircleRef,
     isClampX: false, // 커서 위치에 따라 handle의 x좌표를 조절
@@ -53,26 +60,28 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
   // 우측 handle circle 이벤트
   useDragCurveEditor({
     onDragging: ({ cursorGap }) => {
-      const bezierHandles = Observer.notifyBezierHandles({
+      Observer.notifyBezierHandles({
         cursorGap,
         dragType: "dragging",
         handleType: "right",
       });
     },
-    onDragEnd: () => {
-      console.log("right circle drag end");
+    onDragEnd: ({ cursorGap }) => {
+      const bezierHandles = Observer.notifyBezierHandles({
+        cursorGap,
+        dragType: "dragend",
+        handleType: "right",
+      });
+      if (bezierHandles) {
+        dispatch(
+          curveEditorAction.updateCurveEditorByBezierHandle({ bezierHandles })
+        );
+      }
     },
     ref: rightCircleRef,
     isClampX: false, // 커서 위치에 따라 handle의 x좌표를 조절
     throttleTime: 100,
   });
-
-  // 좌우측 handle line 드래그 시, 아무런 반응 없도록 처리
-  useEffect(() => {
-    const dragBehavior = d3.drag().on("start", null);
-    d3.select(leftLineRef.current).call(dragBehavior as any);
-    d3.select(rightLineRef.current).call(dragBehavior as any);
-  }, []);
 
   // 좌우 bezier handle 등록
   useEffect(() => {
@@ -106,7 +115,6 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
               y: leftY,
               keyframeIndex: data.keyframe.keyframeIndex,
               lineIndex,
-              dotType: "handle",
               handleType: "left",
             },
             {
@@ -152,6 +160,13 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
       });
     }
   }, [clickedTarget, data, lineIndex]);
+
+  // 좌우측 handle line 드래그 시, 아무런 반응 없도록 처리
+  useEffect(() => {
+    const dragBehavior = d3.drag().on("start", null);
+    d3.select(leftLineRef.current).call(dragBehavior as any);
+    d3.select(rightLineRef.current).call(dragBehavior as any);
+  }, []);
 
   const handlePosition = useMemo(() => {
     const scaleX = Scale.getScaleX();

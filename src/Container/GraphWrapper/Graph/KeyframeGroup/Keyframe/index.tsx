@@ -100,7 +100,11 @@ const Keyframe: FunctionComponent<Props> = (props) => {
 
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
-    if (!clickedTarget) return;
+    if (!clickedTarget) {
+      isAlreadySelected.current = false;
+      setSelected(false);
+      return;
+    }
     const { x, y } = data.keyframe;
     const isClickedMe =
       clickedTarget.trackName === trackName &&
@@ -157,7 +161,13 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         className={cx({ clicked })}
         onClick={handleClickKeyframe}
       />
-      {clicked && <BezierHandles data={data} lineIndex={lineIndex} />}
+      {clicked && (
+        <BezierHandles
+          data={data}
+          lineIndex={lineIndex}
+          clickedTarget={clickedTarget}
+        />
+      )}
     </g>
   );
 };

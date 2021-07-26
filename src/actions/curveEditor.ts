@@ -3,7 +3,8 @@ import { ClickedTarget, ClasifiedKeyframes } from "types/curveEditor";
 export type CurveEditorAction =
   | ReturnType<typeof changeClickedTarget>
   | ReturnType<typeof updateCurveEditorByCurveLine>
-  | ReturnType<typeof updateCurveEditorByKeyframe>;
+  | ReturnType<typeof updateCurveEditorByKeyframe>
+  | ReturnType<typeof updateCurveEditorByBezierHandle>;
 
 // curve line, keyframe 클릭 시 clickedTarget 데이터 변경
 interface ChangeClickedTarget {

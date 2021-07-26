@@ -127,6 +127,23 @@ export const curveEditor = (
         draft.clickedTarget = null;
       });
     }
+    case "curveEditor/UPDATE_CURVE_EDITOR_BY_BEZIER_HANDLE": {
+      return produce(state, (draft) => {
+        const bezierHandles = action.payload.bezierHandles;
+        bezierHandles.forEach((bezierHandle) => {
+          const lineIndex = (bezierHandle.lineIndex / 3) | 0;
+          const xyzIndex = bezierHandle.lineIndex % 3;
+          const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
+          bezierHandle.keyframeData.forEach((value) => {
+            const { x, y, keyframeIndex, handleType } = value;
+            const handles =
+              draft.curveEditorData[lineIndex][xyzChar][keyframeIndex].handles;
+            if (handleType) handles[handleType] = { x, y };
+          });
+        });
+        draft.clickedTarget = null;
+      });
+    }
     default: {
       return state;
     }
