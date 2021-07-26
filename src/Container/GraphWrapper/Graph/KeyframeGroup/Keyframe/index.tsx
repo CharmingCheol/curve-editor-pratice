@@ -100,11 +100,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
 
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
-    if (!clickedTarget) {
-      isAlreadySelected.current = false;
-      setSelected(false);
-      return;
-    }
+    if (!clickedTarget) return;
     const { x, y } = data.keyframe;
     const isClickedMe =
       clickedTarget.trackName === trackName &&
@@ -154,7 +150,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       ref={keyframeRef}
       transform={`translate(${circleTranslateXY.x}, ${circleTranslateXY.y})`}
     >
-      {clicked && (
+      {clicked && clickedTarget && (
         <BezierHandles
           data={data}
           lineIndex={lineIndex}

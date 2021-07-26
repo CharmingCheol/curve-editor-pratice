@@ -30,6 +30,7 @@ export const curveEditor = (
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_KEYFRAME": {
+      Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       return produce(state, (draft) => {
         // x, y, z중에 해당되는 value 가져오기
         const getAmongXYZ = (lineIndex: number, xyzIndex: number) => {
@@ -100,6 +101,7 @@ export const curveEditor = (
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_CURVE_LINE": {
+      Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       return produce(state, (draft) => {
         const { changedX, changedY, lineIndices } = action.payload;
         lineIndices.forEach((lineIndex) => {
@@ -128,6 +130,7 @@ export const curveEditor = (
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_BEZIER_HANDLE": {
+      Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       return produce(state, (draft) => {
         const bezierHandles = action.payload.bezierHandles;
         bezierHandles.forEach((bezierHandle) => {
