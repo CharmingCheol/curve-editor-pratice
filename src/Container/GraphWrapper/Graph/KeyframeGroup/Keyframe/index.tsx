@@ -154,13 +154,6 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       ref={keyframeRef}
       transform={`translate(${circleTranslateXY.x}, ${circleTranslateXY.y})`}
     >
-      <circle
-        r={1.5}
-        cx={circleXY.x}
-        cy={circleXY.y}
-        className={cx({ clicked })}
-        onClick={handleClickKeyframe}
-      />
       {clicked && (
         <BezierHandles
           data={data}
@@ -168,6 +161,13 @@ const Keyframe: FunctionComponent<Props> = (props) => {
           clickedTarget={clickedTarget}
         />
       )}
+      <circle
+        r={1.5}
+        cx={circleXY.x}
+        cy={circleXY.y}
+        className={cx({ clicked })}
+        onClick={handleClickKeyframe}
+      />
     </g>
   );
 };
