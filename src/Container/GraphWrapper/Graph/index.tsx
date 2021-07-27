@@ -1,44 +1,44 @@
 import React, { useCallback, useRef, useState, FunctionComponent } from "react";
-import { KeyframeValues, Coordinates } from "types/curveEditor";
+import { KeyframeValue, Coordinates } from "types/curveEditor";
 import CurveLine from "./CurveLine";
 import KeyframeGroup from "./KeyframeGroup";
 
 interface Props {
-  trackName: string;
-  lineIndex: number;
-  values: KeyframeValues[];
+  boneName: string;
+  boneIndex: number;
+  values: KeyframeValue[];
   xyzIndex: number;
 }
 
 const Graph: FunctionComponent<Props> = (props) => {
-  const { trackName, lineIndex, xyzIndex, values } = props;
+  const { boneName, boneIndex, values, xyzIndex } = props;
   const color = xyzIndex === 0 ? "red" : xyzIndex === 1 ? "green" : "blue";
   const graphRef = useRef<SVGGElement>(null);
-  const [graphTranslateXY, setGraphTranslateXY] = useState({ x: 0, y: 0 });
+  const [graphTranslate, setGraphTranslate] = useState({ x: 0, y: 0 });
 
   const changeGraphTranslate = useCallback(({ x, y }: Coordinates) => {
-    setGraphTranslateXY({ x, y });
+    setGraphTranslate({ x, y });
   }, []);
 
   return (
     <g
       ref={graphRef}
-      transform={`translate(${graphTranslateXY.x}, ${graphTranslateXY.y})`}
+      transform={`translate(${graphTranslate.x}, ${graphTranslate.y})`}
     >
       <CurveLine
-        values={values}
-        color={color}
-        trackName={trackName}
-        xyzIndex={xyzIndex}
-        lineIndex={lineIndex}
-        graphRef={graphRef}
+        boneIndex={boneIndex}
+        boneName={boneName}
         changeGraphTranslate={changeGraphTranslate}
+        color={color}
+        graphRef={graphRef}
+        values={values}
+        xyzIndex={xyzIndex}
       />
       <KeyframeGroup
+        boneIndex={boneIndex}
+        boneName={boneName}
         values={values}
-        trackName={trackName}
         xyzIndex={xyzIndex}
-        lineIndex={lineIndex}
       />
     </g>
   );

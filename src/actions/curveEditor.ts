@@ -1,4 +1,4 @@
-import { ClickedTarget, ClasifiedKeyframes } from "types/curveEditor";
+import { ClickedTarget, ClassifiedMarker } from "types/curveEditor";
 
 export type CurveEditorAction =
   | ReturnType<typeof changeClickedTarget>
@@ -23,7 +23,7 @@ export const changeClickedTarget = (params: ChangeClickedTarget) => ({
 
 // keyframe에 의해 curve editor 데이터 업데이트
 interface UpdateCurveEditorByKeyframe {
-  keyframes: ClasifiedKeyframes[];
+  keyframes: ClassifiedMarker[];
 }
 
 export const UPDATE_CURVE_EDITOR_BY_KEYFRAME =
@@ -42,7 +42,7 @@ export const updateCurveEditorByKeyframe = (
 interface UpdateCurveEditorByCurveLine {
   changedX: number;
   changedY: number;
-  lineIndices: number[];
+  boneIndexes: number[];
 }
 
 export const UPDATE_CURVE_EDITOR_BY_CURVE_LINE =
@@ -59,7 +59,7 @@ export const updateCurveEditorByCurveLine = (
 
 // bezier handle 드래그 시, curve editor 데이터 업데이트
 interface UpdateCurveEditorByBezierHandle {
-  bezierHandles: ClasifiedKeyframes[];
+  bezierHandles: ClassifiedMarker[];
 }
 
 export const UPDATE_CURVE_EDITOR_BY_BEZIER_HANDLE =

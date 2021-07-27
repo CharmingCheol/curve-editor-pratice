@@ -2,9 +2,7 @@ import React, { Fragment, FunctionComponent } from "react";
 import { useSelector } from "reducers";
 import Graph from "./Graph";
 
-interface Props {}
-
-const GraphWrapper: FunctionComponent<Props> = () => {
+const GraphWrapper: FunctionComponent<{}> = () => {
   const curveEditorData = useSelector(
     (state) => state.curveEditor.curveEditorData
   );
@@ -12,16 +10,16 @@ const GraphWrapper: FunctionComponent<Props> = () => {
   return (
     <Fragment>
       {curveEditorData?.map((graph, boneIndex) => {
-        const { trackName, x, y, z } = graph;
+        const { boneName, x, y, z } = graph;
         return (
-          <Fragment key={`${trackName}_${boneIndex}`}>
+          <Fragment key={`${boneName}_${boneIndex}`}>
             {[x, y, z].map((values, xyzIndex) => (
               <Graph
-                key={`${trackName}_${boneIndex * 3 + xyzIndex}_${xyzIndex}`}
-                trackName={trackName}
-                lineIndex={boneIndex * 3 + xyzIndex}
-                xyzIndex={xyzIndex}
+                key={`${boneName}_${boneIndex * 3 + xyzIndex}_${xyzIndex}`}
+                boneName={boneName}
+                boneIndex={boneIndex * 3 + xyzIndex}
                 values={values}
+                xyzIndex={xyzIndex}
               />
             ))}
           </Fragment>

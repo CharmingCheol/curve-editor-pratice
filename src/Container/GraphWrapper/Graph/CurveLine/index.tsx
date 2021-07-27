@@ -12,12 +12,7 @@ import _ from "lodash";
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as curveEditor from "actions/curveEditor";
-import {
-  ClasifiedKeyframes,
-  ClickedTarget,
-  Coordinates,
-  KeyframeValues,
-} from "types/curveEditor";
+import { ClickedTarget, Coordinates, KeyframeValue } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import { fnGetBinarySearch } from "utils";
 import classNames from "classnames/bind";
@@ -28,31 +23,31 @@ import Observer from "Container/observer";
 const cx = classNames.bind(styles);
 
 interface Props {
-  color: string;
-  lineIndex: number;
-  trackName: string;
-  values: KeyframeValues[];
-  xyzIndex: number;
-  graphRef: RefObject<SVGGElement>;
+  boneIndex: number;
+  boneName: string;
   changeGraphTranslate: (cursor: Coordinates) => void;
+  color: string;
+  graphRef: RefObject<SVGGElement>;
+  values: KeyframeValue[];
+  xyzIndex: number;
 }
 
 const CurveLine: FunctionComponent<Props> = (props) => {
   const {
-    color,
-    values,
-    trackName,
-    xyzIndex,
-    lineIndex,
-    graphRef,
+    boneIndex,
+    boneName,
     changeGraphTranslate,
+    color,
+    graphRef,
+    values,
+    xyzIndex,
   } = props;
   const dispatch = useDispatch();
-  const isAlreadySelected = useRef(false);
-  const pathData = useRef<KeyframeValues[]>();
+  const isAlreadySelectedCurve = useRef(false);
+  const curveData = useRef<KeyframeValue[]>();
 
-  const [changePathData, setChangePathData] = useState(0);
-  const [selected, setSelected] = useState(false);
+  const [changeCurveData, setChangeCurveData] = useState(0);
+  const [selectedCurve, setSelectedCurve] = useState(false);
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
   const xyzType = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
 
@@ -61,77 +56,79 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     (event: React.MouseEvent) => {
       const clickedTarget: ClickedTarget = {
         targetType: "curveLine",
-        trackName,
+        boneName,
         xyzType,
         ctrl: event.ctrlKey || event.metaKey,
         alt: event.altKey,
       };
-      dispatch(
-        curveEditor.changeClickedTarget({
-          clickedTarget,
-        })
-      );
+      const action = curveEditor.changeClickedTarget({ clickedTarget });
+      dispatch(action);
     },
-    [dispatch, trackName, xyzType]
+    [boneName, dispatch, xyzType]
   );
 
   // 커브라인 옵저버 호출
   const registerCurveLineObserver = useCallback(() => {
     Observer.registerCurveLine({
-      active: ({ x, y }) => {
+      call: ({ x, y }) => {
         changeGraphTranslate({ x, y });
-        return lineIndex;
+        return boneIndex;
       },
-      passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => {
+      called: (clasifiedKeyframes) => {
         const binaryIndex = fnGetBinarySearch({
           collection: clasifiedKeyframes,
-          index: lineIndex,
-          key: "lineIndex",
+          index: boneIndex,
+          key: "boneIndex",
         });
-        if (binaryIndex !== -1 && pathData.current) {
-          const dotType = clasifiedKeyframes[binaryIndex].dotType;
-          const myKeyframes = clasifiedKeyframes[binaryIndex].keyframeData;
-          if (dotType === "keyframe") {
-            for (let index = 0; index < myKeyframes.length; index += 1) {
-              const { x, y, keyframeIndex } = myKeyframes[index];
-              const targetIndex = pathData.current.findIndex(
+        if (binaryIndex !== -1 && curveData.current) {
+          const markerType = clasifiedKeyframes[binaryIndex].markerType;
+          if (markerType === "keyframe") {
+            const keyframes = clasifiedKeyframes[binaryIndex].markerData;
+            for (let index = 0; index < keyframes.length; index += 1) {
+              const { x, y, keyframeIndex } = keyframes[index];
+              const targetIndex = curveData.current.findIndex(
                 ({ keyframe }) => keyframe.keyframeIndex === keyframeIndex
               );
-              pathData.current[targetIndex].keyframe = {
+              curveData.current[targetIndex].keyframe = {
                 x: x,
                 y: y,
                 keyframeIndex: keyframeIndex,
               };
-              pathData.current[targetIndex].handles = {
+              curveData.current[targetIndex].handles = {
                 left: { x: x - 0.3, y: y },
                 right: { x: x + 0.3, y: y },
               };
             }
-            pathData.current?.sort((a, b) => a.keyframe.x - b.keyframe.x);
-          } else if (dotType === "handle") {
-            for (let index = 0; index < myKeyframes.length; index += 1) {
-              const { x, y, keyframeIndex, handleType } = myKeyframes[index];
-              const targetIndex = pathData.current.findIndex(
+            curveData.current?.sort((a, b) => a.keyframe.x - b.keyframe.x);
+          } else if (markerType === "handle") {
+            const bezierHandles = clasifiedKeyframes[binaryIndex].markerData;
+            for (let index = 0; index < bezierHandles.length; index += 1) {
+              const { x, y, keyframeIndex, handleType } = bezierHandles[index];
+              const targetIndex = curveData.current.findIndex(
                 ({ keyframe }) => keyframe.keyframeIndex === keyframeIndex
               );
               if (handleType) {
-                pathData.current[targetIndex].handles[handleType] = { x, y };
+                curveData.current[targetIndex].handles[handleType] = { x, y };
               }
             }
           }
-          setChangePathData((prev) => prev + 1);
+          setChangeCurveData((prev) => prev + 1);
         }
       },
     });
-  }, [lineIndex]);
+  }, [boneIndex]);
 
   useDragCurveEditor({
     onDragging: ({ cursorGap }) => {
-      Observer.notifyCurveLines(cursorGap, "dragging");
+      Observer.notifyCurveLines({ cursorGap, dragType: "dragging" });
     },
     onDragEnd: ({ cursorGap }) => {
-      const lineIndices = Observer.notifyCurveLines({ x: 0, y: 0 }, "dragend");
-      if (lineIndices) {
+      const originXY = { x: 0, y: 0 };
+      const boneIndexes = Observer.notifyCurveLines({
+        cursorGap: originXY,
+        dragType: "dragend",
+      });
+      if (boneIndexes) {
         const { x, y } = values[0].keyframe;
         const scaleX = Scale.getScaleX();
         const scaleY = Scale.getScaleY();
@@ -143,7 +140,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
         const changedX = Math.round(invertX(circleX + cursorGap.x)) - x;
         const changedY = invertY(circleY + cursorGap.y) - y;
 
-        const params = { changedX, changedY, lineIndices };
+        const params = { changedX, changedY, boneIndexes };
         dispatch(curveEditor.updateCurveEditorByCurveLine(params));
         Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       }
@@ -153,58 +150,58 @@ const CurveLine: FunctionComponent<Props> = (props) => {
 
   // 커브라인 clicked state 변경
   useEffect(() => {
-    if (!clickedTarget || !pathData.current) return;
+    if (!clickedTarget || !curveData.current) return;
     const isClickedMe =
       clickedTarget.targetType === "curveLine" &&
-      clickedTarget.trackName === trackName &&
+      clickedTarget.boneName === boneName &&
       clickedTarget.xyzType === xyzType;
     const isClickedKeyframe =
       clickedTarget.targetType === "keyframe" &&
-      clickedTarget.trackName === trackName &&
+      clickedTarget.boneName === boneName &&
       clickedTarget.xyzType === xyzType;
     if (clickedTarget.ctrl) {
-      if (isClickedMe || isClickedKeyframe || isAlreadySelected.current) {
-        isAlreadySelected.current = true;
+      if (isClickedMe || isClickedKeyframe || isAlreadySelectedCurve.current) {
+        isAlreadySelectedCurve.current = true;
         registerCurveLineObserver();
-        setSelected(true);
+        setSelectedCurve(true);
       }
     } else if (isClickedMe || isClickedKeyframe) {
-      isAlreadySelected.current = true;
+      isAlreadySelectedCurve.current = true;
       registerCurveLineObserver();
-      setSelected(true);
+      setSelectedCurve(true);
     } else if (clickedTarget.alt && clickedTarget.coordinates) {
-      const times = pathData.current.map(({ keyframe }) => keyframe.x);
+      const times = curveData.current.map(({ keyframe }) => keyframe.x);
       const binaryIndex = fnGetBinarySearch({
         collection: times,
         index: clickedTarget.coordinates.x,
       });
       if (binaryIndex !== -1) {
-        isAlreadySelected.current = true;
+        isAlreadySelectedCurve.current = true;
         registerCurveLineObserver();
-        setSelected(true);
+        setSelectedCurve(true);
       }
     } else {
-      isAlreadySelected.current = false;
-      setSelected(false);
+      isAlreadySelectedCurve.current = false;
+      setSelectedCurve(false);
     }
-  }, [registerCurveLineObserver, clickedTarget, lineIndex, trackName, xyzType]);
+  }, [boneIndex, boneName, clickedTarget, registerCurveLineObserver, xyzType]);
 
   useEffect(() => {
-    pathData.current = _.cloneDeep(values);
-    setChangePathData((prev) => prev + 1);
-    setSelected(false);
+    curveData.current = _.cloneDeep(values);
+    setChangeCurveData((prev) => prev + 1);
+    setSelectedCurve(false);
   }, [values]);
 
   const pathShapes = useMemo(() => {
     const scaleX = Scale.getScaleX();
     const scaleY = Scale.getScaleY();
-    if (pathData.current) {
-      const startKeyframe = pathData.current[0].keyframe;
-      let path = `M${scaleX(startKeyframe.x)},${scaleY(startKeyframe.y)}`;
-      for (let index = 0; index < pathData.current.length - 1; index += 1) {
-        const { x: x1, y: y1 } = pathData.current[index].handles.right;
-        const { x: x2, y: y2 } = pathData.current[index + 1].handles.left;
-        const { x: endX, y: endY } = pathData.current[index + 1].keyframe;
+    if (curveData.current) {
+      const firstKeyframe = curveData.current[0].keyframe;
+      let path = `M${scaleX(firstKeyframe.x)},${scaleY(firstKeyframe.y)}`;
+      for (let index = 0; index < curveData.current.length - 1; index += 1) {
+        const { x: x1, y: y1 } = curveData.current[index].handles.right;
+        const { x: x2, y: y2 } = curveData.current[index + 1].handles.left;
+        const { x: endX, y: endY } = curveData.current[index + 1].keyframe;
         const bezier1 = `${scaleX(x1)},${scaleY(y1)}`;
         const bezier2 = `${scaleX(x2)},${scaleY(y2)}`;
         const endPoint = `${scaleX(endX)},${scaleY(endY)}`;
@@ -212,11 +209,11 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       }
       return path;
     }
-  }, [changePathData]);
+  }, [changeCurveData]);
 
   return (
     <path
-      className={cx("curve", { selected })}
+      className={cx("curve", { selected: selectedCurve })}
       fill="none"
       stroke={color}
       d={pathShapes}

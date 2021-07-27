@@ -5,34 +5,38 @@ export interface Coordinates {
 
 export interface KeyframeCoordinates extends Coordinates {
   keyframeIndex: number;
-  handleType?: "left" | "right";
 }
 
-export interface KeyframeValues {
+export interface MarkerData extends Coordinates {
+  handleType?: "left" | "right";
+  keyframeIndex: number;
+}
+
+export interface KeyframeValue {
   handles: { left: Coordinates; right: Coordinates };
   keyframe: KeyframeCoordinates;
 }
 
 export interface CurveEditorData {
+  boneName: string;
   interpolation: string;
   isIncluded: boolean;
-  trackName: string;
-  x: KeyframeValues[];
-  y: KeyframeValues[];
-  z: KeyframeValues[];
+  x: KeyframeValue[];
+  y: KeyframeValue[];
+  z: KeyframeValue[];
 }
 
-export interface ClasifiedKeyframes {
-  keyframeData: KeyframeCoordinates[];
-  lineIndex: number;
-  dotType: "keyframe" | "handle";
+export interface ClassifiedMarker {
+  boneIndex: number;
+  markerData: MarkerData[];
+  markerType: "handle" | "keyframe";
 }
 
 export interface ClickedTarget {
   alt?: boolean;
+  boneName: string;
   coordinates?: Coordinates;
   ctrl?: boolean;
   targetType: "curveLine" | "keyframe";
-  trackName: string;
   xyzType: "x" | "y" | "z";
 }

@@ -1,11 +1,11 @@
-import { KeyframeValues, CurveEditorData } from "types/curveEditor";
+import { KeyframeValue, CurveEditorData } from "types/curveEditor";
 import dummy from "../dummy.json";
 
 const curveEditorDataHelper = (): CurveEditorData[] => {
   return dummy.baseLayer.slice(0, 12).map((data) => {
-    const x: KeyframeValues[] = [];
-    const y: KeyframeValues[] = [];
-    const z: KeyframeValues[] = [];
+    const x: KeyframeValue[] = [];
+    const y: KeyframeValue[] = [];
+    const z: KeyframeValue[] = [];
     data.values.forEach((value, index) => {
       const remainder = index % 3;
       const quotient = (index / 3) | 0;
@@ -19,7 +19,7 @@ const curveEditorDataHelper = (): CurveEditorData[] => {
         },
       });
     });
-    const setBezierHandleY = (xyz: KeyframeValues[]) => {
+    const setBezierHandleY = (xyz: KeyframeValue[]) => {
       for (let index = 0; index < xyz.length - 1; index += 1) {
         const currentKeyframe = xyz[index].keyframe;
         const currentRightHandle = xyz[index].handles.right;
@@ -42,7 +42,7 @@ const curveEditorDataHelper = (): CurveEditorData[] => {
     return {
       interpolation: data.interpolation,
       isIncluded: data.isIncluded,
-      trackName: data.name,
+      boneName: data.name,
       x,
       y,
       z,

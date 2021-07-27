@@ -9,18 +9,19 @@ import React, {
 import { useDispatch } from "react-redux";
 import * as d3 from "d3";
 import * as curveEditorAction from "actions/curveEditor";
-import { KeyframeValues } from "types/curveEditor";
+import { KeyframeValue } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
+
 interface Props {
-  data: KeyframeValues;
-  lineIndex: number;
+  boneIndex: number;
+  data: KeyframeValue;
   updateBezierHandle: number;
 }
 
 const BezierHandles: FunctionComponent<Props> = (props) => {
-  const { data, lineIndex, updateBezierHandle } = props;
+  const { boneIndex, data, updateBezierHandle } = props;
   const dispatch = useDispatch();
   const leftLineRef = useRef<SVGPathElement>(null);
   const leftCircleRef = useRef<SVGCircleElement>(null);
@@ -102,14 +103,14 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
               x: leftX,
               y: leftY,
               keyframeIndex: data.keyframe.keyframeIndex,
-              lineIndex,
+              boneIndex,
               handleType: "left",
             },
             {
               x: rightX,
               y: rightY,
               keyframeIndex: data.keyframe.keyframeIndex,
-              lineIndex,
+              boneIndex,
               handleType: "right",
             },
           ];
@@ -126,21 +127,21 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
               x: leftX,
               y: leftY,
               keyframeIndex: data.keyframe.keyframeIndex,
-              lineIndex,
+              boneIndex,
               handleType: "left",
             },
             {
               x: rightX,
               y: rightY,
               keyframeIndex: data.keyframe.keyframeIndex,
-              lineIndex,
+              boneIndex,
               handleType: "right",
             },
           ];
         },
       });
     }
-  }, [data, lineIndex, updateBezierHandle]);
+  }, [boneIndex, data, updateBezierHandle]);
 
   // 좌우측 handle line 드래그 시, 아무런 반응 없도록 처리
   useEffect(() => {

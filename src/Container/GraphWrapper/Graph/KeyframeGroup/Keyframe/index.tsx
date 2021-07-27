@@ -10,7 +10,7 @@ import React, {
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as curveEditor from "actions/curveEditor";
-import { ClickedTarget, KeyframeValues } from "types/curveEditor";
+import { ClickedTarget, KeyframeValue } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
@@ -21,21 +21,21 @@ import styles from "./index.module.scss";
 const cx = classNames.bind(styles);
 
 interface Props {
-  data: KeyframeValues;
-  trackName: string;
-  xyzType: "x" | "y" | "z";
+  boneIndex: number;
+  boneName: string;
   keyframeIndex: number;
-  lineIndex: number;
+  keyframeValue: KeyframeValue;
+  xyzType: "x" | "y" | "z";
 }
 
 const Keyframe: FunctionComponent<Props> = (props) => {
-  const { data, keyframeIndex, lineIndex, trackName, xyzType } = props;
+  const { boneIndex, boneName, keyframeValue, keyframeIndex, xyzType } = props;
   const keyframePosition = useRef({ circleX: 0, circleY: 0 });
   const keyframeRef = useRef<SVGGElement>(null);
-  const isAlreadySelected = useRef(false);
+  const isAlreadySelectedKeyframe = useRef(false);
   const dispatch = useDispatch();
 
-  const [clicked, setSelected] = useState(false);
+  const [clickedkeyframe, setSelectedKeyframe] = useState(false);
   const [circleTranslateXY, setCircleTranslateXY] = useState({ x: 0, y: 0 });
   const [updateBezierHandle, setUpdateBezierHandle] = useState(0);
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
@@ -46,25 +46,25 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       event.preventDefault();
       const clickedTarget: ClickedTarget = {
         targetType: "keyframe",
-        trackName,
+        boneName,
         xyzType,
         ctrl: event.ctrlKey || event.metaKey,
         alt: event.altKey,
-        coordinates: { x: data.keyframe.x, y: data.keyframe.y },
+        coordinates: {
+          x: keyframeValue.keyframe.x,
+          y: keyframeValue.keyframe.y,
+        },
       };
-      dispatch(
-        curveEditor.changeClickedTarget({
-          clickedTarget,
-        })
-      );
+      const action = curveEditor.changeClickedTarget({ clickedTarget });
+      dispatch(action);
     },
-    [data, dispatch, trackName, xyzType]
+    [boneName, dispatch, keyframeValue, xyzType]
   );
 
   // 옵저버에 선택 된 키프레임 추가
   const registerKeyframeObserver = useCallback(() => {
     Observer.registerKeyframe({
-      active: ({ x, y }) => {
+      call: ({ x, y }) => {
         const invertScaleX = Scale.getScaleX().invert;
         const invertScaleY = Scale.getScaleY().invert;
         const { circleX, circleY } = keyframePosition.current;
@@ -72,15 +72,14 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         const value = invertScaleY(circleY + y);
         setCircleTranslateXY({ x, y });
         return {
-          lineIndex,
+          boneIndex,
           keyframeIndex,
           x: time,
           y: value,
-          dotType: "keyframe",
         };
       },
     });
-  }, [keyframeIndex, lineIndex]);
+  }, [boneIndex, keyframeIndex]);
 
   // 키프레임 드래그, 드래그 종료
   useDragCurveEditor({
@@ -102,69 +101,70 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
     if (!clickedTarget) {
-      isAlreadySelected.current = false;
-      setSelected(false);
+      isAlreadySelectedKeyframe.current = false;
+      setSelectedKeyframe(false);
       return;
     }
-    const { x, y } = data.keyframe;
+    const { x, y } = keyframeValue.keyframe;
     const isClickedMe =
-      clickedTarget.trackName === trackName &&
+      clickedTarget.boneName === boneName &&
       clickedTarget.xyzType === xyzType &&
       clickedTarget.coordinates?.x === x &&
       clickedTarget.coordinates?.y === y;
     const isAltClick = clickedTarget.alt && clickedTarget.coordinates?.x === x;
     const isClickedCurveLine =
       clickedTarget.targetType === "curveLine" &&
-      clickedTarget.trackName === trackName &&
+      clickedTarget.boneName === boneName &&
       clickedTarget.xyzType === xyzType;
     if (clickedTarget.ctrl) {
-      if (isClickedMe || isAlreadySelected.current || isClickedCurveLine) {
-        isAlreadySelected.current = true;
+      if (
+        isClickedMe ||
+        isAlreadySelectedKeyframe.current ||
+        isClickedCurveLine
+      ) {
+        isAlreadySelectedKeyframe.current = true;
         registerKeyframeObserver();
-        setSelected(true);
+        setSelectedKeyframe(true);
         setUpdateBezierHandle((prev) => prev + 1);
       }
     } else if (isClickedMe || isAltClick || isClickedCurveLine) {
-      isAlreadySelected.current = true;
+      isAlreadySelectedKeyframe.current = true;
       registerKeyframeObserver();
-      setSelected(true);
+      setSelectedKeyframe(true);
       setUpdateBezierHandle((prev) => prev + 1);
     } else {
-      isAlreadySelected.current = false;
-      setSelected(false);
+      isAlreadySelectedKeyframe.current = false;
+      setSelectedKeyframe(false);
     }
-    return () => {
-      isAlreadySelected.current = false;
-      setSelected(false);
-    };
+    return () => setSelectedKeyframe(false);
   }, [
     registerKeyframeObserver,
+    boneIndex,
+    boneName,
     clickedTarget,
     keyframeIndex,
-    lineIndex,
-    trackName,
+    keyframeValue,
     xyzType,
-    data,
   ]);
 
   const circleXY = useMemo(() => {
     const scaleX = Scale.getScaleX();
     const scaleY = Scale.getScaleY();
-    const circleX = scaleX(data.keyframe.x) | 0;
-    const circleY = scaleY(data.keyframe.y);
+    const circleX = scaleX(keyframeValue.keyframe.x) | 0;
+    const circleY = scaleY(keyframeValue.keyframe.y);
     keyframePosition.current = { circleX, circleY };
     return { x: circleX, y: circleY };
-  }, [data]);
+  }, [keyframeValue]);
 
   return (
     <g
       ref={keyframeRef}
       transform={`translate(${circleTranslateXY.x}, ${circleTranslateXY.y})`}
     >
-      {clicked && (
+      {clickedkeyframe && (
         <BezierHandles
-          data={data}
-          lineIndex={lineIndex}
+          data={keyframeValue}
+          boneIndex={boneIndex}
           updateBezierHandle={updateBezierHandle}
         />
       )}
@@ -172,7 +172,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         r={1.5}
         cx={circleXY.x}
         cy={circleXY.y}
-        className={cx({ clicked })}
+        className={cx({ clicked: clickedkeyframe })}
         onClick={handleClickKeyframe}
       />
     </g>

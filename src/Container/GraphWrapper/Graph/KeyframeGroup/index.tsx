@@ -1,16 +1,16 @@
 import React, { FunctionComponent } from "react";
-import { KeyframeValues } from "types/curveEditor";
+import { KeyframeValue } from "types/curveEditor";
 import Keyframe from "./Keyframe";
 
 interface Props {
-  lineIndex: number;
-  trackName: string;
-  values: KeyframeValues[];
+  boneIndex: number;
+  boneName: string;
+  values: KeyframeValue[];
   xyzIndex: number;
 }
 
 const KeyframeGroup: FunctionComponent<Props> = (props) => {
-  const { lineIndex, trackName, values, xyzIndex } = props;
+  const { boneIndex, boneName, values, xyzIndex } = props;
   const xyzType = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
 
   return (
@@ -18,10 +18,10 @@ const KeyframeGroup: FunctionComponent<Props> = (props) => {
       {values.map((keyframeValue, keyframeIndex) => (
         <Keyframe
           key={`${keyframeValue.keyframe.x}_${keyframeValue.keyframe.y}`}
-          data={keyframeValue}
+          boneIndex={boneIndex}
+          boneName={boneName}
           keyframeIndex={keyframeIndex}
-          lineIndex={lineIndex}
-          trackName={trackName}
+          keyframeValue={keyframeValue}
           xyzType={xyzType}
         />
       ))}

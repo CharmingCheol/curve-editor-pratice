@@ -2,7 +2,7 @@ import produce from "immer";
 import {
   ClickedTarget,
   CurveEditorData,
-  KeyframeValues,
+  KeyframeValue,
 } from "types/curveEditor";
 import { CurveEditorAction } from "actions/curveEditor";
 import Observer from "Container/observer";
@@ -66,13 +66,13 @@ export const curveEditor = (
         };
         // 키프레임 데이터 업데이트
         action.payload.keyframes.forEach((keyframe) => {
-          const { keyframeData } = keyframe;
-          const lineIndex = (keyframe.lineIndex / 3) | 0;
-          const xyzIndex = keyframe.lineIndex % 3;
-          const values = getAmongXYZ(lineIndex, xyzIndex);
+          const { markerData } = keyframe;
+          const boneIndex = (keyframe.boneIndex / 3) | 0;
+          const xyzIndex = keyframe.boneIndex % 3;
+          const values = getAmongXYZ(boneIndex, xyzIndex);
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           if (values) {
-            keyframeData.forEach(({ keyframeIndex, x, y }) => {
+            markerData.forEach(({ keyframeIndex, x, y }) => {
               const leftHandleY = values[keyframeIndex].handles.left.y;
               const rightHandleY = values[keyframeIndex].handles.right.y;
               const keyframeY = values[keyframeIndex].keyframe.y;
@@ -85,7 +85,7 @@ export const curveEditor = (
                 x: x + 0.3,
                 y: rightHandleY - (keyframeY - y),
               };
-              setKeyframeDelete(lineIndex, x, keyframeIndex, xyzChar);
+              setKeyframeDelete(boneIndex, x, keyframeIndex, xyzChar);
             });
             values.sort((a, b) => a.keyframe.x - b.keyframe.x);
             const filterdValues = values.filter(
@@ -94,7 +94,7 @@ export const curveEditor = (
             for (let index = 0; index < filterdValues.length; index += 1) {
               filterdValues[index].keyframe.keyframeIndex = index;
             }
-            draft.curveEditorData[lineIndex][xyzChar] = filterdValues;
+            draft.curveEditorData[boneIndex][xyzChar] = filterdValues;
           }
         });
         draft.clickedTarget = null;
@@ -103,13 +103,13 @@ export const curveEditor = (
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_CURVE_LINE": {
       Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       return produce(state, (draft) => {
-        const { changedX, changedY, lineIndices } = action.payload;
-        lineIndices.forEach((lineIndex) => {
-          const quotient = (lineIndex / 3) | 0;
-          const remaider = lineIndex % 3;
+        const { changedX, changedY, boneIndexes } = action.payload;
+        boneIndexes.forEach((boneIndex) => {
+          const quotient = (boneIndex / 3) | 0;
+          const remaider = boneIndex % 3;
           const xyzChar = remaider === 0 ? "x" : remaider === 1 ? "y" : "z";
           const lineData = draft.curveEditorData[quotient][xyzChar];
-          const updatedLineData = lineData.map<KeyframeValues>(
+          const updatedLineData = lineData.map<KeyframeValue>(
             ({ keyframe, handles: { left, right } }) => {
               return {
                 keyframe: {
@@ -134,13 +134,13 @@ export const curveEditor = (
       return produce(state, (draft) => {
         const bezierHandles = action.payload.bezierHandles;
         bezierHandles.forEach((bezierHandle) => {
-          const lineIndex = (bezierHandle.lineIndex / 3) | 0;
-          const xyzIndex = bezierHandle.lineIndex % 3;
+          const boneIndex = (bezierHandle.boneIndex / 3) | 0;
+          const xyzIndex = bezierHandle.boneIndex % 3;
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
-          bezierHandle.keyframeData.forEach((value) => {
+          bezierHandle.markerData.forEach((value) => {
             const { x, y, keyframeIndex, handleType } = value;
             const handles =
-              draft.curveEditorData[lineIndex][xyzChar][keyframeIndex].handles;
+              draft.curveEditorData[boneIndex][xyzChar][keyframeIndex].handles;
             if (handleType) handles[handleType] = { x, y };
           });
         });

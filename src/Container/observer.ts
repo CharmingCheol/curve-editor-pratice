@@ -1,33 +1,43 @@
 import { fnGetBinarySearch } from "utils";
 import {
   Coordinates,
-  ClasifiedKeyframes,
+  ClassifiedMarker,
   KeyframeCoordinates,
 } from "types/curveEditor";
 
-interface SelectedKeyframes extends KeyframeCoordinates {
-  lineIndex: number;
-  handleType?: "left" | "right";
+interface SelectedKeyframe extends KeyframeCoordinates {
+  boneIndex: number;
 }
 
-interface BezierHandleParams {
+interface SelectedBezierHandle extends SelectedKeyframe {
+  handleType: "left" | "right";
+}
+
+interface NotifyParams {
   cursorGap: Coordinates;
   dragType: "dragging" | "dragend";
+}
+
+interface BezierHandleParams extends NotifyParams {
   handleType: "left" | "right";
 }
 
 interface RegisterKeyframe {
-  active: (cursorGap: Coordinates) => SelectedKeyframes; // 키프레임 선택
+  call: (params: Coordinates) => SelectedKeyframe; // 키프레임 선택
 }
 
 interface RegisterCurveLine {
-  active: (cursorGap: Coordinates) => number; // 커브라인 선택
-  passive: (clasifiedKeyframes: ClasifiedKeyframes[]) => void; // 키프레임 선택에 의해 커브라인도 선택 됨
+  call: (params: Coordinates) => number; // 커브라인 선택
+  called: (params: ClassifiedMarker[]) => void; // 키프레임 선택에 의해 커브라인도 선택 됨
 }
 
 interface RegisterBezierHandle {
-  left: (params: BezierHandleParams) => [SelectedKeyframes, SelectedKeyframes];
-  right: (params: BezierHandleParams) => [SelectedKeyframes, SelectedKeyframes];
+  left: (
+    params: BezierHandleParams
+  ) => [SelectedBezierHandle, SelectedBezierHandle];
+  right: (
+    params: BezierHandleParams
+  ) => [SelectedBezierHandle, SelectedBezierHandle];
 }
 
 class Observer {
@@ -58,36 +68,30 @@ class Observer {
   }
 
   // keyframe 호출 시, curve line도 같이 호출
-  static notifyKeyframes(params: {
-    cursorGap: Coordinates;
-    dragType: "dragging" | "dragend";
-  }) {
+  static notifyKeyframes(params: NotifyParams) {
     const { cursorGap, dragType } = params;
-    const selectedKeyframes = this.keyframes.map(({ active }) =>
-      active(cursorGap)
-    );
-    const clasifiedKeyframes: ClasifiedKeyframes[] = [];
+    const selectedKeyframes = this.keyframes.map(({ call }) => call(cursorGap));
+    const clasifiedKeyframes: ClassifiedMarker[] = [];
     for (let index = 0; index < selectedKeyframes.length; index += 1) {
-      const keyframeData = selectedKeyframes[index];
-      const { lineIndex, ...others } = keyframeData;
+      const { boneIndex, ...others } = selectedKeyframes[index];
       const binaryIndex = fnGetBinarySearch({
         collection: clasifiedKeyframes,
-        index: lineIndex,
-        key: "lineIndex",
+        index: boneIndex,
+        key: "boneIndex",
       });
       if (binaryIndex === -1) {
         clasifiedKeyframes.push({
-          lineIndex: lineIndex,
-          keyframeData: [others],
-          dotType: "keyframe",
+          boneIndex: boneIndex,
+          markerData: [others],
+          markerType: "keyframe",
         });
       } else {
-        clasifiedKeyframes[binaryIndex].keyframeData.push(others);
+        clasifiedKeyframes[binaryIndex].markerData.push(others);
       }
     }
     if (clasifiedKeyframes.length) {
       if (dragType === "dragging") {
-        this.curveLines.forEach(({ passive }) => passive(clasifiedKeyframes));
+        this.curveLines.forEach(({ called }) => called(clasifiedKeyframes));
       } else if (dragType === "dragend") {
         return clasifiedKeyframes;
       }
@@ -95,14 +99,12 @@ class Observer {
   }
 
   // curve line 호출 시, keyframe도 같이 호출
-  static notifyCurveLines(
-    cursorGap: Coordinates,
-    dragType: "dragging" | "dragend"
-  ) {
+  static notifyCurveLines(params: NotifyParams) {
+    const { cursorGap, dragType } = params;
     if (dragType === "dragging") {
-      this.curveLines.forEach(({ active }) => active(cursorGap));
+      this.curveLines.forEach(({ call }) => call(cursorGap));
     } else if (dragType === "dragend") {
-      return this.curveLines.map(({ active }) => active(cursorGap));
+      return this.curveLines.map(({ call }) => call(cursorGap));
     }
   }
 
@@ -119,30 +121,27 @@ class Observer {
         }
       })
       .flat();
-    const clasifiedBezierHandles: ClasifiedKeyframes[] = [];
+    const clasifiedBezierHandles: ClassifiedMarker[] = [];
     for (let index = 0; index < draggedBezierHandles.length; index += 1) {
-      const keyframeData = draggedBezierHandles[index];
-      const { lineIndex, ...others } = keyframeData;
+      const { boneIndex, ...others } = draggedBezierHandles[index];
       const binaryIndex = fnGetBinarySearch({
         collection: clasifiedBezierHandles,
-        index: lineIndex,
-        key: "lineIndex",
+        index: boneIndex,
+        key: "boneIndex",
       });
       if (binaryIndex === -1) {
         clasifiedBezierHandles.push({
-          lineIndex: lineIndex,
-          keyframeData: [others],
-          dotType: "handle",
+          boneIndex: boneIndex,
+          markerData: [others],
+          markerType: "handle",
         });
       } else {
-        clasifiedBezierHandles[binaryIndex].keyframeData.push(others);
+        clasifiedBezierHandles[binaryIndex].markerData.push(others);
       }
     }
     if (clasifiedBezierHandles.length) {
       if (dragType === "dragging") {
-        this.curveLines.forEach(({ passive }) =>
-          passive(clasifiedBezierHandles)
-        );
+        this.curveLines.forEach(({ called }) => called(clasifiedBezierHandles));
       } else if (dragType === "dragend") {
         return clasifiedBezierHandles;
       }
