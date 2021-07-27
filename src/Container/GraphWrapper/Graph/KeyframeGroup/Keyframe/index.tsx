@@ -35,8 +35,9 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   const isAlreadySelected = useRef(false);
   const dispatch = useDispatch();
 
-  const [circleTranslateXY, setCircleTranslateXY] = useState({ x: 0, y: 0 });
   const [clicked, setSelected] = useState(false);
+  const [circleTranslateXY, setCircleTranslateXY] = useState({ x: 0, y: 0 });
+  const [updateBezierHandle, setUpdateBezierHandle] = useState(0);
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
 
   // 키프레임 클릭
@@ -100,7 +101,11 @@ const Keyframe: FunctionComponent<Props> = (props) => {
 
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
-    if (!clickedTarget) return;
+    if (!clickedTarget) {
+      isAlreadySelected.current = false;
+      setSelected(false);
+      return;
+    }
     const { x, y } = data.keyframe;
     const isClickedMe =
       clickedTarget.trackName === trackName &&
@@ -117,15 +122,21 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         isAlreadySelected.current = true;
         registerKeyframeObserver();
         setSelected(true);
+        setUpdateBezierHandle((prev) => prev + 1);
       }
     } else if (isClickedMe || isAltClick || isClickedCurveLine) {
       isAlreadySelected.current = true;
       registerKeyframeObserver();
       setSelected(true);
+      setUpdateBezierHandle((prev) => prev + 1);
     } else {
       isAlreadySelected.current = false;
       setSelected(false);
     }
+    return () => {
+      isAlreadySelected.current = false;
+      setSelected(false);
+    };
   }, [
     registerKeyframeObserver,
     clickedTarget,
@@ -150,11 +161,11 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       ref={keyframeRef}
       transform={`translate(${circleTranslateXY.x}, ${circleTranslateXY.y})`}
     >
-      {clicked && clickedTarget && (
+      {clicked && (
         <BezierHandles
           data={data}
           lineIndex={lineIndex}
-          clickedTarget={clickedTarget}
+          updateBezierHandle={updateBezierHandle}
         />
       )}
       <circle

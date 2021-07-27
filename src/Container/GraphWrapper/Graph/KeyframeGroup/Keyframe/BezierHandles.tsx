@@ -9,19 +9,18 @@ import React, {
 import { useDispatch } from "react-redux";
 import * as d3 from "d3";
 import * as curveEditorAction from "actions/curveEditor";
-import { ClickedTarget, KeyframeValues } from "types/curveEditor";
+import { KeyframeValues } from "types/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
-
 interface Props {
   data: KeyframeValues;
   lineIndex: number;
-  clickedTarget: ClickedTarget | null;
+  updateBezierHandle: number;
 }
 
 const BezierHandles: FunctionComponent<Props> = (props) => {
-  const { data, lineIndex, clickedTarget } = props;
+  const { data, lineIndex, updateBezierHandle } = props;
   const dispatch = useDispatch();
   const leftLineRef = useRef<SVGPathElement>(null);
   const leftCircleRef = useRef<SVGCircleElement>(null);
@@ -85,7 +84,7 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
 
   // 좌우 bezier handle 등록
   useEffect(() => {
-    if (clickedTarget) {
+    if (updateBezierHandle) {
       const scaleX = Scale.getScaleX();
       const scaleY = Scale.getScaleY();
       const invertScaleX = scaleX.invert;
@@ -98,17 +97,6 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
           const rightY = invertScaleY(scaleY(data.handles.right.y) - y);
           setLeftCircleXY({ ...{ x: leftX, y: leftY } });
           setRightCircleXY({ ...{ x: rightX, y: rightY } });
-          /** ToDo
-           * unify tangent / Break Tangent 버튼 클릭 시, Handle 처리 구현
-           */
-          // return {
-          //   x: leftX,
-          //   y: leftY,
-          //   keyframeIndex: data.keyframe.keyframeIndex,
-          //   lineIndex,
-          //   dotType: "handle",
-          //   handleType: "left",
-          // };
           return [
             {
               x: leftX,
@@ -133,13 +121,6 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
           const leftY = invertScaleY(scaleY(data.handles.left.y) - y);
           setLeftCircleXY({ ...{ x: leftX, y: leftY } });
           setRightCircleXY({ ...{ x: rightX, y: rightY } });
-          // return {
-          //   x: rightX,
-          //   y: rightY,
-          //   keyframeIndex: data.keyframe.keyframeIndex,
-          //   lineIndex,
-          //   handleType: "right",
-          // };
           return [
             {
               x: leftX,
@@ -159,7 +140,7 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
         },
       });
     }
-  }, [clickedTarget, data, lineIndex]);
+  }, [data, lineIndex, updateBezierHandle]);
 
   // 좌우측 handle line 드래그 시, 아무런 반응 없도록 처리
   useEffect(() => {
