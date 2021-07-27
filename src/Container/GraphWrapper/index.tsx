@@ -10,16 +10,16 @@ const GraphWrapper: FunctionComponent<Props> = () => {
   );
 
   return (
-    <g id="graph-wrapper">
-      {curveEditorData?.map((graph, lineIndex) => {
+    <Fragment>
+      {curveEditorData?.map((graph, boneIndex) => {
         const { trackName, x, y, z } = graph;
         return (
-          <Fragment key={`${trackName}_${lineIndex}`}>
+          <Fragment key={`${trackName}_${boneIndex}`}>
             {[x, y, z].map((values, xyzIndex) => (
               <Graph
-                key={`${trackName}_${lineIndex * 3 + xyzIndex}_${xyzIndex}`}
+                key={`${trackName}_${boneIndex * 3 + xyzIndex}_${xyzIndex}`}
                 trackName={trackName}
-                lineIndex={lineIndex * 3 + xyzIndex}
+                lineIndex={boneIndex * 3 + xyzIndex}
                 xyzIndex={xyzIndex}
                 values={values}
               />
@@ -27,7 +27,7 @@ const GraphWrapper: FunctionComponent<Props> = () => {
           </Fragment>
         );
       })}
-    </g>
+    </Fragment>
   );
 };
 
