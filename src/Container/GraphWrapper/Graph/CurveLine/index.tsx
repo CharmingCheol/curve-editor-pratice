@@ -108,7 +108,17 @@ const CurveLine: FunctionComponent<Props> = (props) => {
                 ({ keyframe }) => keyframe.keyframeIndex === keyframeIndex
               );
               if (handleType) {
-                curveData.current[targetIndex].handles[handleType] = { x, y };
+                const prevKeyframeX =
+                  curveData.current[targetIndex - 1]?.keyframe.x;
+                const nextKeyframeX =
+                  curveData.current[targetIndex + 1]?.keyframe.x;
+                const isContained = prevKeyframeX <= x && x <= nextKeyframeX;
+                if (!prevKeyframeX || !nextKeyframeX || isContained) {
+                  curveData.current[targetIndex].handles[handleType] = {
+                    x,
+                    y,
+                  };
+                }
               }
             }
           }
