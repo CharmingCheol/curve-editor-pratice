@@ -96,18 +96,28 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
           const leftY = invertScaleY(scaleY(data.handles.left.y) + y);
           const rightX = invertScaleX(scaleX(data.handles.right.x) - x);
           const rightY = invertScaleY(scaleY(data.handles.right.y) - y);
-          setLeftCircleXY({ ...{ x: leftX, y: leftY } });
-          setRightCircleXY({ ...{ x: rightX, y: rightY } });
+          setLeftCircleXY({
+            ...{
+              x: data.keyframe.x < leftX ? data.keyframe.x : leftX,
+              y: leftY,
+            },
+          });
+          setRightCircleXY({
+            ...{
+              x: rightX < data.keyframe.x ? data.keyframe.x : rightX,
+              y: rightY,
+            },
+          });
           return [
             {
-              x: leftX,
+              x: data.keyframe.x < leftX ? data.keyframe.x : leftX,
               y: leftY,
               keyframeIndex: data.keyframe.keyframeIndex,
               boneIndex,
               handleType: "left",
             },
             {
-              x: rightX,
+              x: rightX < data.keyframe.x ? data.keyframe.x : rightX,
               y: rightY,
               keyframeIndex: data.keyframe.keyframeIndex,
               boneIndex,
@@ -120,18 +130,28 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
           const rightY = invertScaleY(scaleY(data.handles.right.y) + y);
           const leftX = invertScaleX(scaleX(data.handles.left.x) - x);
           const leftY = invertScaleY(scaleY(data.handles.left.y) - y);
-          setLeftCircleXY({ ...{ x: leftX, y: leftY } });
-          setRightCircleXY({ ...{ x: rightX, y: rightY } });
+          setLeftCircleXY({
+            ...{
+              x: data.keyframe.x < leftX ? data.keyframe.x : leftX,
+              y: leftY,
+            },
+          });
+          setRightCircleXY({
+            ...{
+              x: rightX < data.keyframe.x ? data.keyframe.x : rightX,
+              y: rightY,
+            },
+          });
           return [
             {
-              x: leftX,
+              x: data.keyframe.x < leftX ? data.keyframe.x : leftX,
               y: leftY,
               keyframeIndex: data.keyframe.keyframeIndex,
               boneIndex,
               handleType: "left",
             },
             {
-              x: rightX,
+              x: rightX < data.keyframe.x ? data.keyframe.x : rightX,
               y: rightY,
               keyframeIndex: data.keyframe.keyframeIndex,
               boneIndex,
