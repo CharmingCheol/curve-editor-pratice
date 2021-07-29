@@ -20,6 +20,7 @@ interface NotifyParams {
 
 interface BezierHandleParams extends NotifyParams {
   handleType: "left" | "right";
+  breakHandle: boolean;
 }
 
 interface RegisterKeyframe {
@@ -32,12 +33,9 @@ interface RegisterCurveLine {
 }
 
 interface RegisterBezierHandle {
-  left: (
-    params: BezierHandleParams
-  ) => [SelectedBezierHandle, SelectedBezierHandle];
-  right: (
-    params: BezierHandleParams
-  ) => [SelectedBezierHandle, SelectedBezierHandle];
+  left: (params: BezierHandleParams) => SelectedBezierHandle[];
+  right: (params: BezierHandleParams) => SelectedBezierHandle[];
+  // test: (params: BezierHandleParams) => void;
 }
 
 class Observer {

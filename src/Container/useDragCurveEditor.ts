@@ -91,7 +91,7 @@ const useDragCurveEditor = (props: Props) => {
       )
       .on("end", handleDragEnd);
     d3.select(ref.current).call(dragBehavior as any);
-  }, [handleDragEnd, handleDragStart, handleDragging, ref, throttleTime]);
+  }, [ref, throttleTime]);
 };
 
 export default useDragCurveEditor;

@@ -3,6 +3,7 @@ import * as d3 from "d3";
 import _ from "lodash";
 import Scale from "Container/scale";
 import GraphWrapper from "./GraphWrapper";
+import ToolBar from "./ToolBar";
 import classNames from "classnames/bind";
 import styles from "./index.module.scss";
 
@@ -115,6 +116,7 @@ const App = () => {
 
   return (
     <div className={cx("wrapper")}>
+      <ToolBar />
       <svg ref={curveEditorRef}>
         <g ref={xAxisRef} className={cx("x-axis")} />
         <g ref={yAxisRef} className={cx("y-axis")} />

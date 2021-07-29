@@ -11,11 +11,13 @@ import helper from "./helper";
 interface CurveEditorState {
   clickedTarget: ClickedTarget | null;
   curveEditorData: CurveEditorData[];
+  breakHandle: boolean;
 }
 
 const defaultState: CurveEditorState = {
   clickedTarget: null,
   curveEditorData: helper(),
+  breakHandle: false,
 };
 
 export const curveEditor = (
@@ -27,6 +29,11 @@ export const curveEditor = (
       Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       return Object.assign({}, state, {
         clickedTarget: action.payload.clickedTarget,
+      });
+    }
+    case "curveEditor/CLICK_BREAK_HANDLE_BUTTON": {
+      return Object.assign({}, state, {
+        breakHandle: !state.breakHandle,
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_KEYFRAME": {
