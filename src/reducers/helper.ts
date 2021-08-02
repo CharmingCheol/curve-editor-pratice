@@ -14,26 +14,28 @@ const curveEditorDataHelper = (): CurveEditorData[] => {
       xyz.push({
         keyframe: { x: time, y: value, keyframeIndex: quotient },
         handles: {
-          left: { x: time - 0.3, y: value },
-          right: { x: time + 0.3, y: value },
+          left: { x: time - 1 / 3, y: value },
+          right: { x: time + 1 / 3, y: value },
         },
       });
     });
     const setBezierHandleY = (xyz: KeyframeValue[]) => {
-      for (let index = 0; index < xyz.length - 1; index += 1) {
-        const currentKeyframe = xyz[index].keyframe;
-        const currentRightHandle = xyz[index].handles.right;
+      for (let index = 1; index < xyz.length - 1; index += 1) {
+        const { keyframe, handles } = xyz[index];
+        const prevKeyframe = xyz[index - 1].keyframe;
         const nextKeyframe = xyz[index + 1].keyframe;
-        const nextLeftHandle = xyz[index + 1].handles.left;
-        const slope =
-          (nextKeyframe.y - currentKeyframe.y) /
-          (nextKeyframe.x - currentKeyframe.x); // 두 키프레임의 기울기(a)
-        const interceptY = currentKeyframe.y - slope * currentKeyframe.x; // 두 키프레임의 y절편(b)
-        const newCurrentRightHandleY =
-          slope * currentRightHandle.x + interceptY; // y = ax + b
-        const newNextLeftHandleY = slope * nextLeftHandle.x + interceptY; // y = ax + b
-        xyz[index].handles.right.y = newCurrentRightHandleY;
-        xyz[index + 1].handles.left.y = newNextLeftHandleY;
+        const leftSlope =
+          (prevKeyframe.y - keyframe.y) / (prevKeyframe.x - keyframe.x); // 이전 - 현재 키프레임의 기울기
+        const rightSlope =
+          (nextKeyframe.y - keyframe.y) / (nextKeyframe.x - keyframe.x); // 다음 - 현재 키프레임의 기울기
+        const leftInterceptY = keyframe.y - leftSlope * keyframe.x; // 이전 - 현재 키프레임의 y절편
+        const rightInterceptY = keyframe.y - rightSlope * keyframe.x; // 다음 - 현재 키프레임의 y절편
+        const setNewHandleY = (x: number) => {
+          const newSlope = (leftSlope + rightSlope) / 2;
+          return newSlope * x + (leftInterceptY + rightInterceptY) / 2;
+        };
+        handles.left.y = setNewHandleY(handles.left.x);
+        handles.right.y = setNewHandleY(handles.right.x);
       }
     };
     setBezierHandleY(x);
