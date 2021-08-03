@@ -21,6 +21,7 @@ interface NotifyParams {
 interface BezierHandleParams extends NotifyParams {
   handleType: "left" | "right";
   breakHandle: boolean;
+  weightHandle: boolean;
 }
 
 interface RegisterKeyframe {
@@ -33,9 +34,7 @@ interface RegisterCurveLine {
 }
 
 interface RegisterBezierHandle {
-  left: (params: BezierHandleParams) => SelectedBezierHandle[];
-  right: (params: BezierHandleParams) => SelectedBezierHandle[];
-  // test: (params: BezierHandleParams) => void;
+  call: (params: BezierHandleParams) => SelectedBezierHandle[];
 }
 
 class Observer {
@@ -108,16 +107,9 @@ class Observer {
 
   // bezier handle 호출
   static notifyBezierHandles(params: BezierHandleParams) {
-    const { dragType, handleType } = params;
+    const { dragType } = params;
     const draggedBezierHandles = this.bezierHandles
-      .map((bezierHandle) => {
-        switch (handleType) {
-          case "left":
-            return bezierHandle.left(params);
-          case "right":
-            return bezierHandle.right(params);
-        }
-      })
+      .map((bezierHandle) => bezierHandle.call(params))
       .flat();
     const clasifiedBezierHandles: ClassifiedMarker[] = [];
     for (let index = 0; index < draggedBezierHandles.length; index += 1) {

@@ -12,12 +12,14 @@ interface CurveEditorState {
   clickedTarget: ClickedTarget | null;
   curveEditorData: CurveEditorData[];
   breakHandle: boolean;
+  weightHandle: boolean;
 }
 
 const defaultState: CurveEditorState = {
   clickedTarget: null,
   curveEditorData: helper(),
   breakHandle: false,
+  weightHandle: true,
 };
 
 export const curveEditor = (
@@ -34,6 +36,11 @@ export const curveEditor = (
     case "curveEditor/CLICK_BREAK_HANDLE_BUTTON": {
       return Object.assign({}, state, {
         breakHandle: !state.breakHandle,
+      });
+    }
+    case "curveEditor/CLICK_WEIGHT_HANDLE_BUTTON": {
+      return Object.assign({}, state, {
+        weightHandle: !state.weightHandle,
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_KEYFRAME": {
