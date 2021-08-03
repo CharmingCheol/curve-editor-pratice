@@ -1,53 +1,57 @@
 import React, {
+  Fragment,
+  FunctionComponent,
   useEffect,
   useMemo,
   useRef,
-  Fragment,
-  FunctionComponent,
 } from "react";
 import { useDispatch } from "react-redux";
 import { useSelector } from "reducers";
 import * as d3 from "d3";
-import Scale from "Container/scale";
-import Observer from "Container/observer";
-import useDragCurveEditor from "Container/useDragCurveEditor";
-import { Coordinates, KeyframeCoordinates } from "types/curveEditor";
 import * as curveEditorAction from "actions/curveEditor";
+import useDragCurveEditor from "Container/useDragCurveEditor";
+import Observer from "Container/observer";
+import Scale from "Container/scale";
+import { Coordinates, KeyframeCoordinates } from "types/curveEditor";
 
 interface Props {
+  handleType: "left" | "right";
+  handleXY: Coordinates;
   keyframeXY: KeyframeCoordinates;
-  leftXY: Coordinates;
 }
 
-const Left: FunctionComponent<Props> = (props) => {
-  const { keyframeXY, leftXY } = props;
+const BezierHandleForm: FunctionComponent<Props> = (props) => {
+  const { handleType, handleXY, keyframeXY } = props;
   const dispatch = useDispatch();
-  const leftLineRef = useRef<SVGPathElement>(null);
-  const leftCircleRef = useRef<SVGCircleElement>(null);
+  const lineRef = useRef<SVGPathElement>(null);
+  const circleRef = useRef<SVGCircleElement>(null);
   const breakHandle = useSelector((state) => state.curveEditor.breakHandle);
+  const weightHandle = useSelector((state) => state.curveEditor.weightHandle);
 
   // 좌측 handle line 드래그 시, 아무런 반응 없도록 처리
   useEffect(() => {
     const dragBehavior = d3.drag().on("start", null);
-    d3.select(leftLineRef.current).call(dragBehavior as any);
-  }, []);
+    d3.select(lineRef.current).call(dragBehavior as any);
+  }, [lineRef]);
 
-  // 좌측 handle circle 이벤트
+  // 우측 handle circle 이벤트
   useDragCurveEditor({
     onDragging: ({ cursorGap }) => {
       Observer.notifyBezierHandles({
         cursorGap,
         dragType: "dragging",
-        handleType: "left",
+        handleType,
         breakHandle,
+        weightHandle,
       });
     },
     onDragEnd: ({ cursorGap }) => {
       const bezierHandles = Observer.notifyBezierHandles({
         cursorGap,
         dragType: "dragend",
-        handleType: "left",
+        handleType,
         breakHandle,
+        weightHandle,
       });
       if (bezierHandles) {
         dispatch(
@@ -55,7 +59,7 @@ const Left: FunctionComponent<Props> = (props) => {
         );
       }
     },
-    ref: leftCircleRef,
+    ref: circleRef,
     isClampX: false, // 커서 위치에 따라 handle의 x좌표를 조절
     throttleTime: 100,
   });
@@ -65,33 +69,28 @@ const Left: FunctionComponent<Props> = (props) => {
     const scaleY = Scale.getScaleY();
     const keyframeX = scaleX(keyframeXY.x);
     const keyframeY = scaleY(keyframeXY.y);
-    const leftX = scaleX(leftXY.x);
-    const leftY = scaleY(leftXY.y);
+    const handleX = scaleX(handleXY.x);
+    const handleY = scaleY(handleXY.y);
     return {
       keyframeX,
       keyframeY,
-      leftX,
-      leftY,
-      line: `M${leftX},${leftY} L${keyframeX},${keyframeY}`,
+      handleX,
+      handleY,
+      line: `M${handleX},${handleY} L${keyframeX},${keyframeY}`,
     };
-  }, [keyframeXY, leftXY]);
+  }, [handleXY, keyframeXY]);
 
   return (
     <Fragment>
-      <path
-        ref={leftLineRef}
-        d={handlePosition.line}
-        fill="none"
-        stroke="white"
-      />
+      <path ref={lineRef} d={handlePosition.line} fill="none" stroke="white" />
       <circle
-        ref={leftCircleRef}
+        ref={circleRef}
         r={1}
-        cx={handlePosition.leftX}
-        cy={handlePosition.leftY}
+        cx={handlePosition.handleX}
+        cy={handlePosition.handleY}
       />
     </Fragment>
   );
 };
 
-export default Left;
+export default BezierHandleForm;
