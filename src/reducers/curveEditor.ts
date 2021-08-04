@@ -11,15 +11,11 @@ import helper from "./helper";
 interface CurveEditorState {
   clickedTarget: ClickedTarget | null;
   curveEditorData: CurveEditorData[];
-  breakHandle: boolean;
-  weightHandle: boolean;
 }
 
 const defaultState: CurveEditorState = {
   clickedTarget: null,
   curveEditorData: helper(),
-  breakHandle: false,
-  weightHandle: true,
 };
 
 export const curveEditor = (
@@ -31,16 +27,6 @@ export const curveEditor = (
       Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       return Object.assign({}, state, {
         clickedTarget: action.payload.clickedTarget,
-      });
-    }
-    case "curveEditor/CLICK_BREAK_HANDLE_BUTTON": {
-      return Object.assign({}, state, {
-        breakHandle: !state.breakHandle,
-      });
-    }
-    case "curveEditor/CLICK_WEIGHT_HANDLE_BUTTON": {
-      return Object.assign({}, state, {
-        weightHandle: !state.weightHandle,
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_KEYFRAME": {
@@ -123,21 +109,27 @@ export const curveEditor = (
           const remaider = boneIndex % 3;
           const xyzChar = remaider === 0 ? "x" : remaider === 1 ? "y" : "z";
           const lineData = draft.curveEditorData[quotient][xyzChar];
-          const updatedLineData = lineData.map<KeyframeValue>(
-            ({ keyframe, handles: { left, right } }) => {
-              return {
-                keyframe: {
-                  keyframeIndex: keyframe.keyframeIndex,
-                  x: keyframe.x + changedX,
-                  y: keyframe.y + changedY,
-                },
-                handles: {
-                  left: { x: left.x + changedX, y: left.y + changedY },
-                  right: { x: right.x + changedX, y: right.y + changedY },
-                },
-              };
-            }
-          );
+          const updatedLineData = lineData.map<KeyframeValue>((value) => {
+            const {
+              keyframe,
+              handles: { left, right },
+              breakHandle,
+              weightHandle,
+            } = value;
+            return {
+              keyframe: {
+                keyframeIndex: keyframe.keyframeIndex,
+                x: keyframe.x + changedX,
+                y: keyframe.y + changedY,
+              },
+              handles: {
+                left: { x: left.x + changedX, y: left.y + changedY },
+                right: { x: right.x + changedX, y: right.y + changedY },
+              },
+              breakHandle,
+              weightHandle,
+            };
+          });
           draft.curveEditorData[quotient][xyzChar] = updatedLineData;
         });
         draft.clickedTarget = null;

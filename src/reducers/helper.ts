@@ -17,6 +17,8 @@ const curveEditorDataHelper = (): CurveEditorData[] => {
           left: { x: time - 1 / 3, y: value },
           right: { x: time + 1 / 3, y: value },
         },
+        breakHandle: false,
+        weightHandle: false,
       });
     });
     const setBezierHandleY = (xyz: KeyframeValue[]) => {
