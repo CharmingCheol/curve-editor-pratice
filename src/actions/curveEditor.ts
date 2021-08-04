@@ -4,9 +4,7 @@ export type CurveEditorAction =
   | ReturnType<typeof changeClickedTarget>
   | ReturnType<typeof updateCurveEditorByCurveLine>
   | ReturnType<typeof updateCurveEditorByKeyframe>
-  | ReturnType<typeof updateCurveEditorByBezierHandle>
-  | ReturnType<typeof clickBreakHandleButton>
-  | ReturnType<typeof clickWeightHandleButton>;
+  | ReturnType<typeof updateCurveEditorByBezierHandle>;
 
 // curve line, keyframe 클릭 시 clickedTarget 데이터 변경
 interface ChangeClickedTarget {
@@ -74,20 +72,4 @@ export const updateCurveEditorByBezierHandle = (
   payload: {
     ...params,
   },
-});
-
-// break / unify handle 버튼 클릭
-export const CLICK_BREAK_HANDLE_BUTTON =
-  "curveEditor/CLICK_BREAK_HANDLE_BUTTON" as const;
-
-export const clickBreakHandleButton = () => ({
-  type: CLICK_BREAK_HANDLE_BUTTON,
-});
-
-// weight / non-weight 버튼 클릭
-export const CLICK_WEIGHT_HANDLE_BUTTON =
-  "curveEditor/CLICK_WEIGHT_HANDLE_BUTTON" as const;
-
-export const clickWeightHandleButton = () => ({
-  type: CLICK_WEIGHT_HANDLE_BUTTON,
 });
