@@ -23,13 +23,23 @@ const cx = classNames.bind(styles);
 interface Props {
   boneIndex: number;
   boneName: string;
+  breakHandle: boolean;
   keyframeIndex: number;
   keyframeValue: KeyframeValue;
+  lockHandle: boolean;
   xyzType: "x" | "y" | "z";
 }
 
 const Keyframe: FunctionComponent<Props> = (props) => {
-  const { boneIndex, boneName, keyframeValue, keyframeIndex, xyzType } = props;
+  const {
+    boneIndex,
+    boneName,
+    breakHandle,
+    keyframeValue,
+    keyframeIndex,
+    lockHandle,
+    xyzType,
+  } = props;
   const keyframePosition = useRef({ circleX: 0, circleY: 0 });
   const keyframeRef = useRef<SVGGElement>(null);
   const isAlreadySelectedKeyframe = useRef(false);
@@ -64,6 +74,8 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   // 옵저버에 선택 된 키프레임 추가
   const registerKeyframeObserver = useCallback(() => {
     Observer.registerKeyframe({
+      keyframeIndex,
+      boneIndex,
       call: ({ x, y }) => {
         const invertScaleX = Scale.getScaleX().invert;
         const invertScaleY = Scale.getScaleY().invert;
@@ -145,6 +157,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     keyframeIndex,
     keyframeValue,
     xyzType,
+    dispatch,
   ]);
 
   const circleXY = useMemo(() => {
@@ -163,9 +176,11 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     >
       {clickedkeyframe && (
         <BezierHandles
-          data={keyframeValue}
+          keyframeValue={keyframeValue}
           boneIndex={boneIndex}
           updateBezierHandle={updateBezierHandle}
+          breakHandle={breakHandle}
+          lockHandle={lockHandle}
         />
       )}
       <circle

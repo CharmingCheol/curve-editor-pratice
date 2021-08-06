@@ -6,7 +6,6 @@ import React, {
   useRef,
 } from "react";
 import { useDispatch } from "react-redux";
-import { useSelector } from "reducers";
 import * as d3 from "d3";
 import * as curveEditorAction from "actions/curveEditor";
 import useDragCurveEditor from "Container/useDragCurveEditor";
@@ -25,8 +24,6 @@ const BezierHandleForm: FunctionComponent<Props> = (props) => {
   const dispatch = useDispatch();
   const lineRef = useRef<SVGPathElement>(null);
   const circleRef = useRef<SVGCircleElement>(null);
-  const breakHandle = useSelector((state) => state.curveEditor.breakHandle);
-  const weightHandle = useSelector((state) => state.curveEditor.weightHandle);
 
   // 좌측 handle line 드래그 시, 아무런 반응 없도록 처리
   useEffect(() => {
@@ -41,8 +38,6 @@ const BezierHandleForm: FunctionComponent<Props> = (props) => {
         cursorGap,
         dragType: "dragging",
         handleType,
-        breakHandle,
-        weightHandle,
       });
     },
     onDragEnd: ({ cursorGap }) => {
@@ -50,8 +45,6 @@ const BezierHandleForm: FunctionComponent<Props> = (props) => {
         cursorGap,
         dragType: "dragend",
         handleType,
-        breakHandle,
-        weightHandle,
       });
       if (bezierHandles) {
         dispatch(

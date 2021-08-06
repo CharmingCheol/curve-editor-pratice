@@ -15,16 +15,21 @@ const KeyframeGroup: FunctionComponent<Props> = (props) => {
 
   return (
     <g>
-      {values.map((keyframeValue, keyframeIndex) => (
-        <Keyframe
-          key={`${keyframeValue.keyframe.x}_${keyframeValue.keyframe.y}`}
-          boneIndex={boneIndex}
-          boneName={boneName}
-          keyframeIndex={keyframeIndex}
-          keyframeValue={keyframeValue}
-          xyzType={xyzType}
-        />
-      ))}
+      {values.map((keyframeValue, keyframeIndex) => {
+        const { breakHandle, keyframe, lockHandle } = keyframeValue;
+        return (
+          <Keyframe
+            key={`${keyframe.x}_${keyframe.y}`}
+            boneIndex={boneIndex}
+            boneName={boneName}
+            breakHandle={breakHandle}
+            keyframeIndex={keyframeIndex}
+            keyframeValue={keyframeValue}
+            lockHandle={lockHandle}
+            xyzType={xyzType}
+          />
+        );
+      })}
     </g>
   );
 };

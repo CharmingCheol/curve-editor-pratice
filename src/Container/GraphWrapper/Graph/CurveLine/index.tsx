@@ -152,7 +152,6 @@ const CurveLine: FunctionComponent<Props> = (props) => {
 
         const params = { changedX, changedY, boneIndexes };
         dispatch(curveEditor.updateCurveEditorByCurveLine(params));
-        Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       }
     },
     ref: graphRef,
