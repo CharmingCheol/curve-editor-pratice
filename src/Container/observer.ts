@@ -2,6 +2,7 @@ import { fnGetBinarySearch } from "utils";
 import {
   Coordinates,
   ClassifiedMarker,
+  HandleType,
   KeyframeCoordinates,
 } from "types/curveEditor";
 
@@ -10,7 +11,7 @@ interface SelectedKeyframe extends KeyframeCoordinates {
 }
 
 interface SelectedBezierHandle extends SelectedKeyframe {
-  handleType: "left" | "right";
+  handleType: HandleType;
 }
 
 interface NotifyParams {
@@ -19,13 +20,13 @@ interface NotifyParams {
 }
 
 interface BezierHandleParams extends NotifyParams {
-  handleType: "left" | "right";
-  breakHandle: boolean;
-  weightHandle: boolean;
+  handleType: HandleType;
 }
 
 interface RegisterKeyframe {
   call: (params: Coordinates) => SelectedKeyframe; // 키프레임 선택
+  boneIndex: number;
+  keyframeIndex: number;
 }
 
 interface RegisterCurveLine {
@@ -35,19 +36,14 @@ interface RegisterCurveLine {
 
 interface RegisterBezierHandle {
   call: (params: BezierHandleParams) => SelectedBezierHandle[];
+  breakHandle: boolean;
+  lockHandle: boolean;
 }
 
 class Observer {
   private static keyframes: RegisterKeyframe[] = [];
   private static curveLines: RegisterCurveLine[] = [];
   private static bezierHandles: RegisterBezierHandle[] = [];
-
-  // 옵저버 리스트 초기화
-  static clearObservers() {
-    this.keyframes.length = 0;
-    this.curveLines.length = 0;
-    this.bezierHandles.length = 0;
-  }
 
   // 선택 된 keyframe 등록
   static registerKeyframe(target: RegisterKeyframe) {
@@ -62,6 +58,37 @@ class Observer {
   // 선택 된 bezier handle 등록
   static registerBezierHandle(target: RegisterBezierHandle) {
     this.bezierHandles.push(target);
+  }
+
+  static getKeyframeObserver() {
+    return this.keyframes;
+  }
+
+  static getCurveLineObserver() {
+    return this.curveLines;
+  }
+
+  static getBezierHandleObserver() {
+    return this.bezierHandles;
+  }
+
+  static clearKeyframeObserver() {
+    this.keyframes.length = 0;
+  }
+
+  static clearCurveLineObserver() {
+    this.curveLines.length = 0;
+  }
+
+  static clearBezierHandleObserver() {
+    this.bezierHandles.length = 0;
+  }
+
+  // 옵저버 리스트 초기화
+  static clearObservers() {
+    this.clearKeyframeObserver();
+    this.clearCurveLineObserver();
+    this.clearBezierHandleObserver();
   }
 
   // keyframe 호출 시, curve line도 같이 호출

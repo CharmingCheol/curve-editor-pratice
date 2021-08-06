@@ -8,13 +8,15 @@ export interface KeyframeCoordinates extends Coordinates {
 }
 
 export interface MarkerData extends Coordinates {
-  handleType?: "left" | "right";
+  handleType?: HandleType;
   keyframeIndex: number;
 }
 
 export interface KeyframeValue {
   handles: { left: Coordinates; right: Coordinates };
   keyframe: KeyframeCoordinates;
+  breakHandle: boolean;
+  lockHandle: boolean;
 }
 
 export interface CurveEditorData {
@@ -40,3 +42,5 @@ export interface ClickedTarget {
   targetType: "curveLine" | "keyframe";
   xyzType: "x" | "y" | "z";
 }
+
+export type HandleType = "left" | "right";
