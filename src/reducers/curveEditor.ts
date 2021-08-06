@@ -8,14 +8,27 @@ import { CurveEditorAction } from "actions/curveEditor";
 import Observer from "Container/observer";
 import helper from "./helper";
 
-interface CurveEditorState {
+export interface ToolBarState {
+  breakHandle: boolean;
+  unifyHandle: boolean;
+  freeHandle: boolean;
+  lockHandle: boolean;
+}
+export interface CurveEditorState extends ToolBarState {
   clickedTarget: ClickedTarget | null;
   curveEditorData: CurveEditorData[];
+  selectedKeyframes: { boneIndex: number; keyframeIndex: number }[] | null;
 }
 
 const defaultState: CurveEditorState = {
   clickedTarget: null,
   curveEditorData: helper(),
+  selectedKeyframes: null,
+  /* tool bar */
+  breakHandle: false,
+  unifyHandle: false,
+  freeHandle: false,
+  lockHandle: false,
 };
 
 export const curveEditor = (
@@ -27,6 +40,36 @@ export const curveEditor = (
       Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       return Object.assign({}, state, {
         clickedTarget: action.payload.clickedTarget,
+      });
+    }
+    case "curveEditor/CHANGE_SELECTED_KEYFRAMES": {
+      const { selectedKeyframes, ...others } = action.payload;
+      return Object.assign({}, state, {
+        selectedKeyframes,
+        ...others,
+      });
+    }
+    case "curveEditor/CLICK_TOOL_BAR_BUTTON": {
+      Observer.clearBezierHandleObserver();
+      return produce(state, (draft) => {
+        const { breakHandle, unifyHandle, lockHandle, freeHandle } =
+          action.payload;
+        const selectedKeyframes = draft.selectedKeyframes;
+        selectedKeyframes?.forEach((keyframe) => {
+          const boneIndex = (keyframe.boneIndex / 3) | 0;
+          const xyzIndex = keyframe.boneIndex % 3;
+          const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
+          const selectedKeyframe =
+            draft.curveEditorData[boneIndex][xyzChar][keyframe.keyframeIndex];
+          if (breakHandle !== undefined)
+            selectedKeyframe.breakHandle = breakHandle;
+          if (lockHandle !== undefined)
+            selectedKeyframe.lockHandle = lockHandle;
+        });
+        if (breakHandle !== undefined) draft.breakHandle = breakHandle;
+        if (unifyHandle !== undefined) draft.unifyHandle = unifyHandle;
+        if (lockHandle !== undefined) draft.lockHandle = lockHandle;
+        if (freeHandle !== undefined) draft.freeHandle = freeHandle;
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_KEYFRAME": {
@@ -114,7 +157,7 @@ export const curveEditor = (
               keyframe,
               handles: { left, right },
               breakHandle,
-              weightHandle,
+              lockHandle,
             } = value;
             return {
               keyframe: {
@@ -127,7 +170,7 @@ export const curveEditor = (
                 right: { x: right.x + changedX, y: right.y + changedY },
               },
               breakHandle,
-              weightHandle,
+              lockHandle,
             };
           });
           draft.curveEditorData[quotient][xyzChar] = updatedLineData;

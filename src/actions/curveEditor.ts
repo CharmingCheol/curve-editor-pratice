@@ -1,7 +1,10 @@
 import { ClickedTarget, ClassifiedMarker } from "types/curveEditor";
+import { ToolBarState } from "reducers/curveEditor";
 
 export type CurveEditorAction =
   | ReturnType<typeof changeClickedTarget>
+  | ReturnType<typeof changeSelectedKeyframes>
+  | ReturnType<typeof clickToolBarButton>
   | ReturnType<typeof updateCurveEditorByCurveLine>
   | ReturnType<typeof updateCurveEditorByKeyframe>
   | ReturnType<typeof updateCurveEditorByBezierHandle>;
@@ -16,6 +19,32 @@ export const CHANGE_CLICKED_TARGET =
 
 export const changeClickedTarget = (params: ChangeClickedTarget) => ({
   type: CHANGE_CLICKED_TARGET,
+  payload: {
+    ...params,
+  },
+});
+
+// 선택 된 키프레임 리스트 변경
+interface ChangeSelectedKeyframes extends Partial<ToolBarState> {
+  selectedKeyframes: { boneIndex: number; keyframeIndex: number }[];
+}
+
+export const CHANGE_SELECTED_KEYFRAMES =
+  "curveEditor/CHANGE_SELECTED_KEYFRAMES" as const;
+
+export const changeSelectedKeyframes = (params: ChangeSelectedKeyframes) => ({
+  type: CHANGE_SELECTED_KEYFRAMES,
+  payload: {
+    ...params,
+  },
+});
+
+// tool bar 버튼 클릭
+export const CLICK_TOOL_BAR_BUTTON =
+  "curveEditor/CLICK_TOOL_BAR_BUTTON" as const;
+
+export const clickToolBarButton = (params: Partial<ToolBarState>) => ({
+  type: CLICK_TOOL_BAR_BUTTON,
   payload: {
     ...params,
   },
