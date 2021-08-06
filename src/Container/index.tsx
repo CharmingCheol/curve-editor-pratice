@@ -24,12 +24,8 @@ const App = () => {
   const yAxisRef = useRef<SVGGElement>(null);
   const xGridRef = useRef<SVGGElement>(null);
   const yGridRef = useRef<SVGGElement>(null);
-
+  const graphWrapperRef = useRef<SVGGElement>(null);
   const [isNotEmptyScale, setIsNotEmptyScale] = useState(false);
-  const [graphWrapperAttr, setGraphWrapperAttr] = useState({
-    transform: "translate(0, 0) scale(1)",
-    strokeWidth: "1",
-  });
 
   useEffect(() => {
     if (
@@ -96,11 +92,15 @@ const App = () => {
       const transformY = transform.y + margin.top;
       const scale = transform.k;
 
+      const graphWrapper = graphWrapperRef.current;
+      if (graphWrapper) {
+        const translate = `translate3d(${transformX}px, ${transformY}px, 0px)`;
+        const transform = `transform:${translate} scale(${scale});`;
+        const strokeWidth = `stroke-width:${1 / scale + 1};`;
+        graphWrapper.style.cssText = `${transform} ${strokeWidth}`;
+      }
+
       updateAxis(rescaleX, rescaleY);
-      setGraphWrapperAttr({
-        transform: `translate(${transformX}, ${transformY}) scale(${scale})`,
-        strokeWidth: `${1 / scale + 1}`,
-      });
     };
 
     const zoomBehavior = d3.zoom().on(
@@ -124,12 +124,7 @@ const App = () => {
           <g ref={xGridRef} className={cx("grid")} />
           <g ref={yGridRef} className={cx("grid")} />
         </g>
-        <g
-          transform={graphWrapperAttr.transform}
-          strokeWidth={graphWrapperAttr.strokeWidth}
-        >
-          {isNotEmptyScale && <GraphWrapper />}
-        </g>
+        <g ref={graphWrapperRef}>{isNotEmptyScale && <GraphWrapper />}</g>
       </svg>
     </div>
   );
