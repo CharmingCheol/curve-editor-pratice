@@ -1,0 +1,7 @@
+button {
+  margin-right: 4px;
+  &.active {
+    color: white;
+    background-color: black;
+  }
+}

@@ -1,25 +1,100 @@
-import React, {
-  useCallback,
-  useState,
-  Fragment,
-  FunctionComponent,
-} from "react";
+import React, { useCallback, Fragment } from "react";
 import { useDispatch } from "react-redux";
+import { useSelector } from "reducers";
+import { ToolBarState } from "reducers/curveEditor";
 import * as curveEditor from "actions/curveEditor";
+import classNames from "classnames/bind";
+import styles from "./index.module.scss";
 
-const ToolBar: FunctionComponent<{}> = () => {
+const cx = classNames.bind(styles);
+
+type ButtonType = "breakHandle" | "lockHandle" | "unifyHandle" | "freeHandle";
+
+const ToolBar = () => {
   const dispatch = useDispatch();
-  const [breakHandle, setBreakHandle] = useState(false);
+  const breakHandle = useSelector((state) => state.curveEditor.breakHandle);
+  const lockHandle = useSelector((state) => state.curveEditor.lockHandle);
+  const unifyHandle = useSelector((state) => state.curveEditor.unifyHandle);
+  const freeHandle = useSelector((state) => state.curveEditor.freeHandle);
 
-  const handleClickBreakHandle = useCallback(() => {
-    dispatch(curveEditor.clickBreakHandleButton());
-    setBreakHandle((prev) => !prev);
-  }, [dispatch]);
+  const handleClickToolBarButton = useCallback(
+    (params: { key: ButtonType; value: boolean }) => () => {
+      const { key, value } = params;
+      switch (key) {
+        case "breakHandle": {
+          const params: Partial<ToolBarState> = {
+            breakHandle: !value,
+            unifyHandle: false,
+          };
+          dispatch(curveEditor.clickToolBarButton(params));
+          break;
+        }
+        case "unifyHandle": {
+          const params: Partial<ToolBarState> = {
+            unifyHandle: !value,
+            breakHandle: false,
+          };
+          dispatch(curveEditor.clickToolBarButton(params));
+          break;
+        }
+        case "freeHandle": {
+          const params: Partial<ToolBarState> = {
+            freeHandle: !value,
+            lockHandle: false,
+          };
+          dispatch(curveEditor.clickToolBarButton(params));
+          break;
+        }
+        case "lockHandle": {
+          const params: Partial<ToolBarState> = {
+            lockHandle: !value,
+            freeHandle: false,
+          };
+          dispatch(curveEditor.clickToolBarButton(params));
+          break;
+        }
+      }
+    },
+    [dispatch]
+  );
 
   return (
     <Fragment>
-      <button onClick={handleClickBreakHandle}>
-        {breakHandle ? "Unifiy" : "Break"}
+      <button
+        className={cx({ active: breakHandle })}
+        onClick={handleClickToolBarButton({
+          key: "breakHandle",
+          value: breakHandle,
+        })}
+      >
+        Break
+      </button>
+      <button
+        className={cx({ active: unifyHandle })}
+        onClick={handleClickToolBarButton({
+          key: "unifyHandle",
+          value: unifyHandle,
+        })}
+      >
+        Unifiy
+      </button>
+      <button
+        className={cx({ active: lockHandle })}
+        onClick={handleClickToolBarButton({
+          key: "lockHandle",
+          value: lockHandle,
+        })}
+      >
+        Lock
+      </button>
+      <button
+        className={cx({ active: freeHandle })}
+        onClick={handleClickToolBarButton({
+          key: "freeHandle",
+          value: freeHandle,
+        })}
+      >
+        Free
       </button>
     </Fragment>
   );
