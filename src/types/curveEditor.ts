@@ -22,16 +22,16 @@ export interface KeyframeValue {
 }
 
 export interface CurveEditorData {
-  boneName: string;
   interpolation: string;
   isIncluded: boolean;
+  transformName: string;
   x: KeyframeValue[];
   y: KeyframeValue[];
   z: KeyframeValue[];
 }
 
 export interface ClassifiedMarker {
-  boneIndex: number;
+  axisIndex: number;
   markerData: MarkerData[];
   markerType: "handle" | "keyframe";
 }
@@ -39,7 +39,7 @@ export interface ClassifiedMarker {
 export interface ClickedTarget {
   alt?: boolean;
   axisType: "x" | "y" | "z";
-  boneIndex: number;
+  axisIndex: number;
   coordinates?: Coordinates;
   ctrl?: boolean;
   targetType: "curveLine" | "keyframe";

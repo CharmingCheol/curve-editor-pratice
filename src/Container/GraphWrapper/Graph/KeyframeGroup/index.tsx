@@ -4,14 +4,12 @@ import Keyframe from "./Keyframe";
 
 interface Props {
   axisIndex: number;
-  boneIndex: number;
-  boneName: string;
   values: KeyframeValue[];
 }
 
 const KeyframeGroup: FunctionComponent<Props> = (props) => {
-  const { axisIndex, boneIndex, boneName, values } = props;
-  const axisType = axisIndex === 0 ? "x" : axisIndex === 1 ? "y" : "z";
+  const { axisIndex, values } = props;
+  const axisType = axisIndex % 3 === 0 ? "x" : axisIndex % 3 === 1 ? "y" : "z";
 
   return (
     <g>
@@ -20,9 +18,8 @@ const KeyframeGroup: FunctionComponent<Props> = (props) => {
         return (
           <Keyframe
             key={`${keyframe.x}_${keyframe.y}`}
+            axisIndex={axisIndex}
             axisType={axisType}
-            boneIndex={boneIndex}
-            boneName={boneName}
             breakHandle={breakHandle}
             keyframeIndex={keyframeIndex}
             keyframeValue={keyframeValue}

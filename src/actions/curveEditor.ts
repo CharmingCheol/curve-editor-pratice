@@ -42,7 +42,7 @@ export const clickGraphElement = (params: ClickGraphElement) => ({
 // 선택 된 키프레임 리스트 변경
 interface ChangeSelectedKeyframes extends Partial<ToolBarState> {
   selectedKeyframes: {
-    boneIndex: number;
+    axisIndex: number;
     keyframeIndex: number;
     lockHandle: boolean;
     breakHandle: boolean;
@@ -91,7 +91,7 @@ export const updateCurveEditorByKeyframe = (
 interface UpdateCurveEditorByCurveLine {
   changedX: number;
   changedY: number;
-  boneIndexes: number[];
+  axisIndexes: number[];
 }
 
 export const UPDATE_CURVE_EDITOR_BY_CURVE_LINE =

@@ -41,17 +41,15 @@ const GraphWrapper: FunctionComponent<{}> = () => {
 
   return (
     <Fragment>
-      {curveEditorData?.map((bone, boneIndex) => {
-        const { boneName, x, y, z } = bone;
+      {curveEditorData?.map((transform, transformIndex) => {
+        const { transformName, x, y, z } = transform;
         return (
-          <Fragment key={`${boneName}_${boneIndex}`}>
-            {[x, y, z].map((values, axisIndex) => (
+          <Fragment key={`${transformName}_${transformIndex}`}>
+            {[x, y, z].map((axisValue, axisIndex) => (
               <Graph
-                key={`${boneName}_${boneIndex * 3 + axisIndex}_${axisIndex}`}
-                axisIndex={axisIndex}
-                boneName={boneName}
-                boneIndex={boneIndex * 3 + axisIndex}
-                values={values}
+                key={`${transformIndex * 3 + axisIndex}_${axisIndex}`}
+                axisIndex={transformIndex * 3 + axisIndex}
+                values={axisValue}
               />
             ))}
           </Fragment>

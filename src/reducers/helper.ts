@@ -46,7 +46,7 @@ const curveEditorDataHelper = (): CurveEditorData[] => {
     return {
       interpolation: data.interpolation,
       isIncluded: data.isIncluded,
-      boneName: data.name,
+      transformName: data.name,
       x,
       y,
       z,

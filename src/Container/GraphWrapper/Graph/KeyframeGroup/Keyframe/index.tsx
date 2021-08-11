@@ -21,8 +21,7 @@ const cx = classNames.bind(styles);
 
 interface Props {
   axisType: "x" | "y" | "z";
-  boneIndex: number;
-  boneName: string;
+  axisIndex: number;
   breakHandle: boolean;
   keyframeIndex: number;
   keyframeValue: KeyframeValue;
@@ -32,8 +31,7 @@ interface Props {
 const Keyframe: FunctionComponent<Props> = (props) => {
   const {
     axisType,
-    boneIndex,
-    boneName,
+    axisIndex,
     breakHandle,
     keyframeValue,
     keyframeIndex,
@@ -54,7 +52,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       event.preventDefault();
       const clickedTarget: ClickedTarget = {
         alt: event.altKey,
-        boneIndex: boneIndex,
+        axisIndex: axisIndex,
         axisType: axisType,
         ctrl: event.ctrlKey || event.metaKey,
         coordinates: {
@@ -66,14 +64,14 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       const action = curveEditor.changeClickedTarget({ clickedTarget });
       dispatch(action);
     },
-    [boneIndex, dispatch, keyframeValue, axisType]
+    [axisIndex, dispatch, keyframeValue, axisType]
   );
 
   // 옵저버에 선택 된 키프레임 추가
   const registerKeyframeObserver = useCallback(() => {
     Observer.registerKeyframe({
       keyframeIndex,
-      boneIndex,
+      axisIndex,
       breakHandle,
       lockHandle,
       call: ({ x, y }) => {
@@ -84,14 +82,14 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         const value = invertScaleY(circleY + y);
         setCircleTranslateXY({ x, y });
         return {
-          boneIndex,
+          axisIndex,
           keyframeIndex,
           x: time,
           y: value,
         };
       },
     });
-  }, [boneIndex, breakHandle, keyframeIndex, lockHandle]);
+  }, [axisIndex, breakHandle, keyframeIndex, lockHandle]);
 
   // 키프레임 드래그, 드래그 종료
   useDragCurveEditor({
@@ -124,11 +122,11 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     if (!clickedTarget) return setDeselectedEffect();
     const { x, y } = keyframeValue.keyframe;
     const isClickedMe =
-      clickedTarget.boneIndex === boneIndex &&
+      clickedTarget.axisIndex === axisIndex &&
       clickedTarget.coordinates?.x === x;
     const isClickedCurveLine =
       clickedTarget.targetType === "curveLine" &&
-      clickedTarget.boneIndex === boneIndex;
+      clickedTarget.axisIndex === axisIndex;
     const isAltClick = clickedTarget.alt && clickedTarget.coordinates?.x === x;
     const selectedCondition = isClickedMe || isClickedCurveLine;
     if (clickedTarget.ctrl) {
@@ -140,8 +138,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     }
   }, [
     registerKeyframeObserver,
-    boneIndex,
-    boneName,
+    axisIndex,
     clickedTarget,
     keyframeIndex,
     keyframeValue,
@@ -165,7 +162,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     >
       {selectedkeyframe && (
         <BezierHandles
-          boneIndex={boneIndex}
+          axisIndex={axisIndex}
           breakHandle={breakHandle}
           lockHandle={lockHandle}
           keyframeData={keyframeValue.keyframe}

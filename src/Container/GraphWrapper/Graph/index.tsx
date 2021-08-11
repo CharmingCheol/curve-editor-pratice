@@ -5,14 +5,13 @@ import KeyframeGroup from "./KeyframeGroup";
 
 interface Props {
   axisIndex: number;
-  boneName: string;
-  boneIndex: number;
   values: KeyframeValue[];
 }
 
 const Graph: FunctionComponent<Props> = (props) => {
-  const { axisIndex, boneName, boneIndex, values } = props;
-  const color = axisIndex === 0 ? "red" : axisIndex === 1 ? "green" : "blue";
+  const { axisIndex, values } = props;
+  const color =
+    axisIndex % 3 === 0 ? "red" : axisIndex % 3 === 1 ? "green" : "blue";
   const graphRef = useRef<SVGGElement>(null);
   const [graphTranslate, setGraphTranslate] = useState({ x: 0, y: 0 });
 
@@ -27,19 +26,12 @@ const Graph: FunctionComponent<Props> = (props) => {
     >
       <CurveLine
         axisIndex={axisIndex}
-        boneIndex={boneIndex}
-        boneName={boneName}
         changeGraphTranslate={changeGraphTranslate}
         color={color}
         graphRef={graphRef}
         values={values}
       />
-      <KeyframeGroup
-        axisIndex={axisIndex}
-        boneIndex={boneIndex}
-        boneName={boneName}
-        values={values}
-      />
+      <KeyframeGroup axisIndex={axisIndex} values={values} />
     </g>
   );
 };

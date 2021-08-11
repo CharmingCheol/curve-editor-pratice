@@ -7,7 +7,7 @@ import {
 } from "types/curveEditor";
 
 interface SelectedKeyframe extends KeyframeCoordinates {
-  boneIndex: number;
+  axisIndex: number;
 }
 
 interface SelectedBezierHandle extends SelectedKeyframe {
@@ -25,7 +25,7 @@ interface BezierHandleParams extends NotifyParams {
 
 interface RegisterKeyframe {
   call: (params: Coordinates) => SelectedKeyframe; // 키프레임 선택
-  boneIndex: number;
+  axisIndex: number;
   keyframeIndex: number;
   breakHandle: boolean;
   lockHandle: boolean;
@@ -99,15 +99,15 @@ class Observer {
     const selectedKeyframes = this.keyframes.map(({ call }) => call(cursorGap));
     const clasifiedKeyframes: ClassifiedMarker[] = [];
     for (let index = 0; index < selectedKeyframes.length; index += 1) {
-      const { boneIndex, ...others } = selectedKeyframes[index];
+      const { axisIndex, ...others } = selectedKeyframes[index];
       const binaryIndex = fnGetBinarySearch({
         collection: clasifiedKeyframes,
-        index: boneIndex,
-        key: "boneIndex",
+        index: axisIndex,
+        key: "axisIndex",
       });
       if (binaryIndex === -1) {
         clasifiedKeyframes.push({
-          boneIndex: boneIndex,
+          axisIndex: axisIndex,
           markerData: [others],
           markerType: "keyframe",
         });
@@ -143,15 +143,15 @@ class Observer {
     console.log("draggedBezierHandles", draggedBezierHandles);
     const clasifiedBezierHandles: ClassifiedMarker[] = [];
     for (let index = 0; index < draggedBezierHandles.length; index += 1) {
-      const { boneIndex, ...others } = draggedBezierHandles[index];
+      const { axisIndex, ...others } = draggedBezierHandles[index];
       const binaryIndex = fnGetBinarySearch({
         collection: clasifiedBezierHandles,
-        index: boneIndex,
-        key: "boneIndex",
+        index: axisIndex,
+        key: "axisIndex",
       });
       if (binaryIndex === -1) {
         clasifiedBezierHandles.push({
-          boneIndex: boneIndex,
+          axisIndex: axisIndex,
           markerData: [others],
           markerType: "handle",
         });

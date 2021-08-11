@@ -9,9 +9,9 @@ import Observer from "Container/observer";
 import helper from "./helper";
 
 interface dd {
-  boneIndex: number;
-  keyframeIndex: number;
+  axisIndex: number;
   breakHandle: boolean;
+  keyframeIndex: number;
   lockHandle: boolean;
 }
 
@@ -25,9 +25,6 @@ export interface CurveEditorState extends ToolBarState {
   clickedTarget: ClickedTarget | null;
   curveEditorData: CurveEditorData[];
   selectedKeyframes: dd[] | null;
-  // axisIndex: number;
-  // keyframeIndex: number;
-  // axisType: "x" | "y" | "z";
 }
 
 const defaultState: CurveEditorState = {
@@ -63,11 +60,11 @@ export const curveEditor = (
           action.payload;
         const selectedKeyframes = draft.selectedKeyframes;
         selectedKeyframes?.forEach((keyframe) => {
-          const boneIndex = (keyframe.boneIndex / 3) | 0;
-          const xyzIndex = keyframe.boneIndex % 3;
+          const axisIndex = (keyframe.axisIndex / 3) | 0;
+          const xyzIndex = keyframe.axisIndex % 3;
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           const selectedKeyframe =
-            draft.curveEditorData[boneIndex][xyzChar][keyframe.keyframeIndex];
+            draft.curveEditorData[axisIndex][xyzChar][keyframe.keyframeIndex];
           if (breakHandle !== undefined) {
             selectedKeyframe.breakHandle = breakHandle;
             keyframe.breakHandle = breakHandle;
@@ -121,9 +118,9 @@ export const curveEditor = (
         // 키프레임 데이터 업데이트
         action.payload.keyframes.forEach((keyframe) => {
           const { markerData } = keyframe;
-          const boneIndex = (keyframe.boneIndex / 3) | 0;
-          const xyzIndex = keyframe.boneIndex % 3;
-          const values = getAmongXYZ(boneIndex, xyzIndex);
+          const axisIndex = (keyframe.axisIndex / 3) | 0;
+          const xyzIndex = keyframe.axisIndex % 3;
+          const values = getAmongXYZ(axisIndex, xyzIndex);
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           if (values) {
             markerData.forEach(({ keyframeIndex, x, y }) => {
@@ -139,7 +136,7 @@ export const curveEditor = (
                 x: x + 0.3,
                 y: rightHandleY - (keyframeY - y),
               };
-              setKeyframeDelete(boneIndex, x, keyframeIndex, xyzChar);
+              setKeyframeDelete(axisIndex, x, keyframeIndex, xyzChar);
             });
             values.sort((a, b) => a.keyframe.x - b.keyframe.x);
             const filterdValues = values.filter(
@@ -148,7 +145,7 @@ export const curveEditor = (
             for (let index = 0; index < filterdValues.length; index += 1) {
               filterdValues[index].keyframe.keyframeIndex = index;
             }
-            draft.curveEditorData[boneIndex][xyzChar] = filterdValues;
+            draft.curveEditorData[axisIndex][xyzChar] = filterdValues;
           }
         });
       });
@@ -156,10 +153,10 @@ export const curveEditor = (
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_CURVE_LINE": {
       Observer.clearObservers(); // 옵저버가 감지하고 있는 리스트 초기화
       return produce(state, (draft) => {
-        const { changedX, changedY, boneIndexes } = action.payload;
-        boneIndexes.forEach((boneIndex) => {
-          const quotient = (boneIndex / 3) | 0;
-          const remaider = boneIndex % 3;
+        const { changedX, changedY, axisIndexes } = action.payload;
+        axisIndexes.forEach((axisIndex) => {
+          const quotient = (axisIndex / 3) | 0;
+          const remaider = axisIndex % 3;
           const xyzChar = remaider === 0 ? "x" : remaider === 1 ? "y" : "z";
           const lineData = draft.curveEditorData[quotient][xyzChar];
           const updatedLineData = lineData.map<KeyframeValue>((value) => {
@@ -192,13 +189,13 @@ export const curveEditor = (
       return produce(state, (draft) => {
         const bezierHandles = action.payload.bezierHandles;
         bezierHandles.forEach((bezierHandle) => {
-          const boneIndex = (bezierHandle.boneIndex / 3) | 0;
-          const xyzIndex = bezierHandle.boneIndex % 3;
+          const axisIndex = (bezierHandle.axisIndex / 3) | 0;
+          const xyzIndex = bezierHandle.axisIndex % 3;
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           bezierHandle.markerData.forEach((value) => {
             const { x, y, keyframeIndex, handleType } = value;
             const handles =
-              draft.curveEditorData[boneIndex][xyzChar][keyframeIndex].handles;
+              draft.curveEditorData[axisIndex][xyzChar][keyframeIndex].handles;
             if (handleType) handles[handleType] = { x, y };
           });
         });

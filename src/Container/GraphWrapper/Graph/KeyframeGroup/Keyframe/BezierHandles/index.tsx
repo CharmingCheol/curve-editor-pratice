@@ -9,14 +9,6 @@ import Scale from "Container/scale";
 import Observer from "Container/observer";
 import BezierHandleForm from "./BezierHandleForm";
 
-interface Props {
-  boneIndex: number;
-  breakHandle: boolean;
-  lockHandle: boolean;
-  keyframeData: KeyframeCoordinates;
-  handlesData: { left: Coordinates; right: Coordinates };
-}
-
 interface SetClampX {
   locked: boolean;
   handleType: HandleType;
@@ -25,8 +17,16 @@ interface SetClampX {
   valueX: number;
 }
 
+interface Props {
+  axisIndex: number;
+  breakHandle: boolean;
+  handlesData: { left: Coordinates; right: Coordinates };
+  lockHandle: boolean;
+  keyframeData: KeyframeCoordinates;
+}
+
 const BezierHandles: FunctionComponent<Props> = (props) => {
-  const { boneIndex, breakHandle, lockHandle, keyframeData, handlesData } =
+  const { axisIndex, breakHandle, handlesData, lockHandle, keyframeData } =
     props;
   const [leftXY, setLeftXY] = useState({ ...handlesData.left });
   const [rightXY, setRightXY] = useState({ ...handlesData.right });
@@ -80,13 +80,13 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
         const leftObject = {
           ...leftXY,
           keyframeIndex: keyframeData.keyframeIndex,
-          boneIndex,
+          axisIndex,
           handleType: "left" as HandleType,
         };
         const rightObject = {
           ...rightXY,
           keyframeIndex: keyframeData.keyframeIndex,
-          boneIndex,
+          axisIndex,
           handleType: "right" as HandleType,
         };
         if (breakHandle) {
@@ -100,7 +100,7 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
       },
     });
   }, [
-    boneIndex,
+    axisIndex,
     breakHandle,
     handlesData,
     keyframeData,
