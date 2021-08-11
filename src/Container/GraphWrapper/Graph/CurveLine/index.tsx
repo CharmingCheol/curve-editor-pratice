@@ -23,24 +23,24 @@ import Observer from "Container/observer";
 const cx = classNames.bind(styles);
 
 interface Props {
+  axisIndex: number;
   boneIndex: number;
   boneName: string;
   changeGraphTranslate: (cursor: Coordinates) => void;
   color: string;
   graphRef: RefObject<SVGGElement>;
   values: KeyframeValue[];
-  xyzIndex: number;
 }
 
 const CurveLine: FunctionComponent<Props> = (props) => {
   const {
+    axisIndex,
     boneIndex,
     boneName,
     changeGraphTranslate,
     color,
     graphRef,
     values,
-    xyzIndex,
   } = props;
   const dispatch = useDispatch();
   const isAlreadySelectedCurve = useRef(false);
@@ -49,22 +49,22 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   const [changeCurveData, setChangeCurveData] = useState(0);
   const [selectedCurve, setSelectedCurve] = useState(false);
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
-  const xyzType = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
+  const axisType = axisIndex === 0 ? "x" : axisIndex === 1 ? "y" : "z";
 
   // curve line 클릭
   const handleClickCurveLine = useCallback(
     (event: React.MouseEvent) => {
       const clickedTarget: ClickedTarget = {
-        targetType: "curveLine",
-        boneName,
-        xyzType,
-        ctrl: event.ctrlKey || event.metaKey,
         alt: event.altKey,
+        axisType: axisType,
+        boneIndex: boneIndex,
+        ctrl: event.ctrlKey || event.metaKey,
+        targetType: "curveLine",
       };
       const action = curveEditor.changeClickedTarget({ clickedTarget });
       dispatch(action);
     },
-    [boneName, dispatch, xyzType]
+    [boneIndex, dispatch, axisType]
   );
 
   // 커브라인 옵저버 호출
@@ -162,12 +162,10 @@ const CurveLine: FunctionComponent<Props> = (props) => {
     if (!clickedTarget || !curveData.current) return;
     const isClickedMe =
       clickedTarget.targetType === "curveLine" &&
-      clickedTarget.boneName === boneName &&
-      clickedTarget.xyzType === xyzType;
+      clickedTarget.boneIndex === boneIndex;
     const isClickedKeyframe =
       clickedTarget.targetType === "keyframe" &&
-      clickedTarget.boneName === boneName &&
-      clickedTarget.xyzType === xyzType;
+      clickedTarget.boneIndex === boneIndex;
     if (clickedTarget.ctrl) {
       if (isClickedMe || isClickedKeyframe || isAlreadySelectedCurve.current) {
         isAlreadySelectedCurve.current = true;
@@ -193,7 +191,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
       isAlreadySelectedCurve.current = false;
       setSelectedCurve(false);
     }
-  }, [boneIndex, boneName, clickedTarget, registerCurveLineObserver, xyzType]);
+  }, [boneIndex, boneName, clickedTarget, registerCurveLineObserver, axisType]);
 
   useEffect(() => {
     curveData.current = _.cloneDeep(values);

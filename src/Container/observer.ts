@@ -27,6 +27,8 @@ interface RegisterKeyframe {
   call: (params: Coordinates) => SelectedKeyframe; // 키프레임 선택
   boneIndex: number;
   keyframeIndex: number;
+  breakHandle: boolean;
+  lockHandle: boolean;
 }
 
 interface RegisterCurveLine {
@@ -138,6 +140,7 @@ class Observer {
     const draggedBezierHandles = this.bezierHandles
       .map((bezierHandle) => bezierHandle.call(params))
       .flat();
+    console.log("draggedBezierHandles", draggedBezierHandles);
     const clasifiedBezierHandles: ClassifiedMarker[] = [];
     for (let index = 0; index < draggedBezierHandles.length; index += 1) {
       const { boneIndex, ...others } = draggedBezierHandles[index];

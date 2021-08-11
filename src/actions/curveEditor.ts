@@ -24,9 +24,29 @@ export const changeClickedTarget = (params: ChangeClickedTarget) => ({
   },
 });
 
+// NEW :  curve line, keyframe 클릭 시 clickedTarget 데이터 변경
+interface ClickGraphElement {
+  clickedTarget: ClickedTarget;
+}
+
+export const CLICK_CURVE_EDITOR_ELEMENT =
+  "curveEditor/CLICK_CURVE_EDITOR_ELEMENT" as const;
+
+export const clickGraphElement = (params: ClickGraphElement) => ({
+  type: CLICK_CURVE_EDITOR_ELEMENT,
+  payload: {
+    ...params,
+  },
+});
+
 // 선택 된 키프레임 리스트 변경
 interface ChangeSelectedKeyframes extends Partial<ToolBarState> {
-  selectedKeyframes: { boneIndex: number; keyframeIndex: number }[];
+  selectedKeyframes: {
+    boneIndex: number;
+    keyframeIndex: number;
+    lockHandle: boolean;
+    breakHandle: boolean;
+  }[];
 }
 
 export const CHANGE_SELECTED_KEYFRAMES =

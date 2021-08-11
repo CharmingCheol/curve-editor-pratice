@@ -1,16 +1,20 @@
 import React, { useEffect, useState, Fragment, FunctionComponent } from "react";
-import { useDispatch } from "react-redux";
-import { HandleType, KeyframeValue } from "types/curveEditor";
+import { useSelector } from "reducers";
+import {
+  Coordinates,
+  HandleType,
+  KeyframeCoordinates,
+} from "types/curveEditor";
 import Scale from "Container/scale";
 import Observer from "Container/observer";
 import BezierHandleForm from "./BezierHandleForm";
 
 interface Props {
   boneIndex: number;
-  keyframeValue: KeyframeValue;
-  updateBezierHandle: number;
   breakHandle: boolean;
   lockHandle: boolean;
+  keyframeData: KeyframeCoordinates;
+  handlesData: { left: Coordinates; right: Coordinates };
 }
 
 interface SetClampX {
@@ -22,16 +26,13 @@ interface SetClampX {
 }
 
 const BezierHandles: FunctionComponent<Props> = (props) => {
-  const {
-    boneIndex,
-    keyframeValue,
-    updateBezierHandle,
-    breakHandle,
-    lockHandle,
-  } = props;
-  const dispatch = useDispatch();
-  const [leftXY, setLeftXY] = useState({ ...keyframeValue.handles.left });
-  const [rightXY, setRightXY] = useState({ ...keyframeValue.handles.right });
+  const { boneIndex, breakHandle, lockHandle, keyframeData, handlesData } =
+    props;
+  const [leftXY, setLeftXY] = useState({ ...handlesData.left });
+  const [rightXY, setRightXY] = useState({ ...handlesData.right });
+  const selectedKeyframes = useSelector(
+    (state) => state.curveEditor.selectedKeyframes
+  );
 
   const setClampX = (params: SetClampX) => {
     const { locked, originHandleX, keyframeX, valueX, handleType } = params;
@@ -42,6 +43,7 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
 
   // 좌우 bezier handle 등록
   useEffect(() => {
+    if (!selectedKeyframes) return;
     Observer.registerBezierHandle({
       breakHandle: breakHandle,
       lockHandle: lockHandle,
@@ -52,25 +54,24 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
         const invertScaleY = scaleY.invert;
 
         const { cursorGap, handleType } = params;
-        const { handles, keyframe } = keyframeValue;
         const gapValueX = handleType === "left" ? cursorGap.x : -cursorGap.x;
         const gapValueY = handleType === "left" ? cursorGap.y : -cursorGap.y;
-        const leftX = invertScaleX(scaleX(handles.left.x) + gapValueX);
-        const leftY = invertScaleY(scaleY(handles.left.y) + gapValueY);
-        const rightX = invertScaleX(scaleX(handles.right.x) - gapValueX);
-        const rightY = invertScaleY(scaleY(handles.right.y) - gapValueY);
+        const leftX = invertScaleX(scaleX(handlesData.left.x) + gapValueX);
+        const leftY = invertScaleY(scaleY(handlesData.left.y) + gapValueY);
+        const rightX = invertScaleX(scaleX(handlesData.right.x) - gapValueX);
+        const rightY = invertScaleY(scaleY(handlesData.right.y) - gapValueY);
 
         const clampLeftX = setClampX({
           locked: lockHandle,
-          originHandleX: keyframeValue.handles.left.x,
-          keyframeX: keyframe.x,
+          originHandleX: handlesData.left.x,
+          keyframeX: keyframeData.x,
           valueX: leftX,
           handleType: "left",
         });
         const clampRightX = setClampX({
           locked: lockHandle,
-          originHandleX: keyframeValue.handles.right.x,
-          keyframeX: keyframe.x,
+          originHandleX: handlesData.right.x,
+          keyframeX: keyframeData.x,
           valueX: rightX,
           handleType: "right",
         });
@@ -78,13 +79,13 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
         const rightXY = { x: clampRightX, y: rightY };
         const leftObject = {
           ...leftXY,
-          keyframeIndex: keyframe.keyframeIndex,
+          keyframeIndex: keyframeData.keyframeIndex,
           boneIndex,
           handleType: "left" as HandleType,
         };
         const rightObject = {
           ...rightXY,
-          keyframeIndex: keyframe.keyframeIndex,
+          keyframeIndex: keyframeData.keyframeIndex,
           boneIndex,
           handleType: "right" as HandleType,
         };
@@ -101,10 +102,10 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
   }, [
     boneIndex,
     breakHandle,
-    keyframeValue,
-    updateBezierHandle,
+    handlesData,
+    keyframeData,
     lockHandle,
-    dispatch,
+    selectedKeyframes,
   ]);
 
   return (
@@ -112,12 +113,12 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
       <BezierHandleForm
         handleType="left"
         handleXY={leftXY}
-        keyframeXY={keyframeValue.keyframe}
+        keyframeXY={keyframeData}
       />
       <BezierHandleForm
         handleType="right"
         handleXY={rightXY}
-        keyframeXY={keyframeValue.keyframe}
+        keyframeXY={keyframeData}
       />
     </Fragment>
   );

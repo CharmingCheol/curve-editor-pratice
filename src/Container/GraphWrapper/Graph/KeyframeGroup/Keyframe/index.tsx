@@ -1,5 +1,4 @@
 import React, {
-  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -21,33 +20,32 @@ import styles from "./index.module.scss";
 const cx = classNames.bind(styles);
 
 interface Props {
+  axisType: "x" | "y" | "z";
   boneIndex: number;
   boneName: string;
   breakHandle: boolean;
   keyframeIndex: number;
   keyframeValue: KeyframeValue;
   lockHandle: boolean;
-  xyzType: "x" | "y" | "z";
 }
 
 const Keyframe: FunctionComponent<Props> = (props) => {
   const {
+    axisType,
     boneIndex,
     boneName,
     breakHandle,
     keyframeValue,
     keyframeIndex,
     lockHandle,
-    xyzType,
   } = props;
   const keyframePosition = useRef({ circleX: 0, circleY: 0 });
   const keyframeRef = useRef<SVGGElement>(null);
-  const isAlreadySelectedKeyframe = useRef(false);
+  const isAlreadySelected = useRef(false);
   const dispatch = useDispatch();
 
-  const [clickedkeyframe, setSelectedKeyframe] = useState(false);
+  const [selectedkeyframe, setSelectedKeyframe] = useState(false);
   const [circleTranslateXY, setCircleTranslateXY] = useState({ x: 0, y: 0 });
-  const [updateBezierHandle, setUpdateBezierHandle] = useState(0);
   const clickedTarget = useSelector((state) => state.curveEditor.clickedTarget);
 
   // 키프레임 클릭
@@ -55,20 +53,20 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     (event: React.MouseEvent) => {
       event.preventDefault();
       const clickedTarget: ClickedTarget = {
-        targetType: "keyframe",
-        boneName,
-        xyzType,
-        ctrl: event.ctrlKey || event.metaKey,
         alt: event.altKey,
+        boneIndex: boneIndex,
+        axisType: axisType,
+        ctrl: event.ctrlKey || event.metaKey,
         coordinates: {
           x: keyframeValue.keyframe.x,
           y: keyframeValue.keyframe.y,
         },
+        targetType: "keyframe",
       };
       const action = curveEditor.changeClickedTarget({ clickedTarget });
       dispatch(action);
     },
-    [boneName, dispatch, keyframeValue, xyzType]
+    [boneIndex, dispatch, keyframeValue, axisType]
   );
 
   // 옵저버에 선택 된 키프레임 추가
@@ -76,6 +74,8 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     Observer.registerKeyframe({
       keyframeIndex,
       boneIndex,
+      breakHandle,
+      lockHandle,
       call: ({ x, y }) => {
         const invertScaleX = Scale.getScaleX().invert;
         const invertScaleY = Scale.getScaleY().invert;
@@ -91,7 +91,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         };
       },
     });
-  }, [boneIndex, keyframeIndex]);
+  }, [boneIndex, breakHandle, keyframeIndex, lockHandle]);
 
   // 키프레임 드래그, 드래그 종료
   useDragCurveEditor({
@@ -112,43 +112,32 @@ const Keyframe: FunctionComponent<Props> = (props) => {
 
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
-    if (!clickedTarget) {
-      isAlreadySelectedKeyframe.current = false;
-      setSelectedKeyframe(false);
-      return;
-    }
-    const { x, y } = keyframeValue.keyframe;
-    const isClickedMe =
-      clickedTarget.boneName === boneName &&
-      clickedTarget.xyzType === xyzType &&
-      clickedTarget.coordinates?.x === x &&
-      clickedTarget.coordinates?.y === y;
-    const isAltClick = clickedTarget.alt && clickedTarget.coordinates?.x === x;
-    const isClickedCurveLine =
-      clickedTarget.targetType === "curveLine" &&
-      clickedTarget.boneName === boneName &&
-      clickedTarget.xyzType === xyzType;
-    if (clickedTarget.ctrl) {
-      if (
-        isClickedMe ||
-        isAlreadySelectedKeyframe.current ||
-        isClickedCurveLine
-      ) {
-        isAlreadySelectedKeyframe.current = true;
-        registerKeyframeObserver();
-        setSelectedKeyframe(true);
-        setUpdateBezierHandle((prev) => prev + 1);
-      }
-    } else if (isClickedMe || isAltClick || isClickedCurveLine) {
-      isAlreadySelectedKeyframe.current = true;
+    const setSelectedEffect = () => {
+      isAlreadySelected.current = true;
       registerKeyframeObserver();
       setSelectedKeyframe(true);
-      setUpdateBezierHandle((prev) => prev + 1);
-    } else {
-      isAlreadySelectedKeyframe.current = false;
+    };
+    const setDeselectedEffect = () => {
+      isAlreadySelected.current = false;
       setSelectedKeyframe(false);
+    };
+    if (!clickedTarget) return setDeselectedEffect();
+    const { x, y } = keyframeValue.keyframe;
+    const isClickedMe =
+      clickedTarget.boneIndex === boneIndex &&
+      clickedTarget.coordinates?.x === x;
+    const isClickedCurveLine =
+      clickedTarget.targetType === "curveLine" &&
+      clickedTarget.boneIndex === boneIndex;
+    const isAltClick = clickedTarget.alt && clickedTarget.coordinates?.x === x;
+    const selectedCondition = isClickedMe || isClickedCurveLine;
+    if (clickedTarget.ctrl) {
+      if (selectedCondition || isAlreadySelected.current) setSelectedEffect();
+    } else if (selectedCondition || isAltClick) {
+      setSelectedEffect();
+    } else {
+      setDeselectedEffect();
     }
-    return () => setSelectedKeyframe(false);
   }, [
     registerKeyframeObserver,
     boneIndex,
@@ -156,7 +145,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
     clickedTarget,
     keyframeIndex,
     keyframeValue,
-    xyzType,
+    axisType,
     dispatch,
   ]);
 
@@ -174,24 +163,24 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       ref={keyframeRef}
       transform={`translate(${circleTranslateXY.x}, ${circleTranslateXY.y})`}
     >
-      {clickedkeyframe && (
+      {selectedkeyframe && (
         <BezierHandles
-          keyframeValue={keyframeValue}
           boneIndex={boneIndex}
-          updateBezierHandle={updateBezierHandle}
           breakHandle={breakHandle}
           lockHandle={lockHandle}
+          keyframeData={keyframeValue.keyframe}
+          handlesData={keyframeValue.handles}
         />
       )}
       <circle
         r={1.5}
         cx={circleXY.x}
         cy={circleXY.y}
-        className={cx({ clicked: clickedkeyframe })}
+        className={cx({ clicked: selectedkeyframe })}
         onClick={handleClickKeyframe}
       />
     </g>
   );
 };
 
-export default memo(Keyframe);
+export default Keyframe;

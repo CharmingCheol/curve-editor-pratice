@@ -23,7 +23,7 @@ const ToolBar = () => {
       switch (key) {
         case "breakHandle": {
           const params: Partial<ToolBarState> = {
-            breakHandle: !value,
+            breakHandle: value === false ? true : value === true ? true : false,
             unifyHandle: false,
           };
           dispatch(curveEditor.clickToolBarButton(params));
@@ -31,7 +31,7 @@ const ToolBar = () => {
         }
         case "unifyHandle": {
           const params: Partial<ToolBarState> = {
-            unifyHandle: !value,
+            unifyHandle: value === false ? true : value === true ? true : false,
             breakHandle: false,
           };
           dispatch(curveEditor.clickToolBarButton(params));
@@ -39,7 +39,7 @@ const ToolBar = () => {
         }
         case "freeHandle": {
           const params: Partial<ToolBarState> = {
-            freeHandle: !value,
+            freeHandle: value === false ? true : value === true ? true : false,
             lockHandle: false,
           };
           dispatch(curveEditor.clickToolBarButton(params));
@@ -47,7 +47,7 @@ const ToolBar = () => {
         }
         case "lockHandle": {
           const params: Partial<ToolBarState> = {
-            lockHandle: !value,
+            lockHandle: value === false ? true : value === true ? true : false,
             freeHandle: false,
           };
           dispatch(curveEditor.clickToolBarButton(params));

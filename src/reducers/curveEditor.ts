@@ -8,6 +8,13 @@ import { CurveEditorAction } from "actions/curveEditor";
 import Observer from "Container/observer";
 import helper from "./helper";
 
+interface dd {
+  boneIndex: number;
+  keyframeIndex: number;
+  breakHandle: boolean;
+  lockHandle: boolean;
+}
+
 export interface ToolBarState {
   breakHandle: boolean;
   unifyHandle: boolean;
@@ -17,7 +24,10 @@ export interface ToolBarState {
 export interface CurveEditorState extends ToolBarState {
   clickedTarget: ClickedTarget | null;
   curveEditorData: CurveEditorData[];
-  selectedKeyframes: { boneIndex: number; keyframeIndex: number }[] | null;
+  selectedKeyframes: dd[] | null;
+  // axisIndex: number;
+  // keyframeIndex: number;
+  // axisType: "x" | "y" | "z";
 }
 
 const defaultState: CurveEditorState = {
@@ -43,11 +53,8 @@ export const curveEditor = (
       });
     }
     case "curveEditor/CHANGE_SELECTED_KEYFRAMES": {
-      const { selectedKeyframes, ...others } = action.payload;
-      return Object.assign({}, state, {
-        selectedKeyframes,
-        ...others,
-      });
+      Observer.clearBezierHandleObserver();
+      return Object.assign({}, state, action.payload);
     }
     case "curveEditor/CLICK_TOOL_BAR_BUTTON": {
       Observer.clearBezierHandleObserver();
@@ -61,10 +68,14 @@ export const curveEditor = (
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           const selectedKeyframe =
             draft.curveEditorData[boneIndex][xyzChar][keyframe.keyframeIndex];
-          if (breakHandle !== undefined)
+          if (breakHandle !== undefined) {
             selectedKeyframe.breakHandle = breakHandle;
-          if (lockHandle !== undefined)
+            keyframe.breakHandle = breakHandle;
+          }
+          if (lockHandle !== undefined) {
             selectedKeyframe.lockHandle = lockHandle;
+            keyframe.lockHandle = lockHandle;
+          }
         });
         if (breakHandle !== undefined) draft.breakHandle = breakHandle;
         if (unifyHandle !== undefined) draft.unifyHandle = unifyHandle;
@@ -140,7 +151,6 @@ export const curveEditor = (
             draft.curveEditorData[boneIndex][xyzChar] = filterdValues;
           }
         });
-        draft.clickedTarget = null;
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_CURVE_LINE": {
@@ -175,7 +185,6 @@ export const curveEditor = (
           });
           draft.curveEditorData[quotient][xyzChar] = updatedLineData;
         });
-        draft.clickedTarget = null;
       });
     }
     case "curveEditor/UPDATE_CURVE_EDITOR_BY_BEZIER_HANDLE": {
@@ -193,7 +202,6 @@ export const curveEditor = (
             if (handleType) handles[handleType] = { x, y };
           });
         });
-        draft.clickedTarget = null;
       });
     }
     default: {

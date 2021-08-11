@@ -7,6 +7,8 @@ export interface KeyframeCoordinates extends Coordinates {
   keyframeIndex: number;
 }
 
+export type HandleType = "left" | "right";
+
 export interface MarkerData extends Coordinates {
   handleType?: HandleType;
   keyframeIndex: number;
@@ -36,11 +38,9 @@ export interface ClassifiedMarker {
 
 export interface ClickedTarget {
   alt?: boolean;
-  boneName: string;
+  axisType: "x" | "y" | "z";
+  boneIndex: number;
   coordinates?: Coordinates;
   ctrl?: boolean;
   targetType: "curveLine" | "keyframe";
-  xyzType: "x" | "y" | "z";
 }
-
-export type HandleType = "left" | "right";

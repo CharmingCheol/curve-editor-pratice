@@ -18,20 +18,19 @@ const GraphWrapper: FunctionComponent<{}> = () => {
   useEffect(() => {
     if (!clickedTarget) return;
     timeoutId.current = window.setTimeout(() => {
-      const bezierHandles = Observer.getBezierHandleObserver();
       const keyframes = Observer.getKeyframeObserver().map(
         ({ call, ...others }) => ({ ...others })
       );
       let breakHandleCount = 0;
       let lockHandleCount = 0;
-      for (let index = 0; index < bezierHandles.length; index += 1) {
-        if (bezierHandles[index].breakHandle) breakHandleCount += 1;
-        if (bezierHandles[index].lockHandle) lockHandleCount += 1;
+      for (let index = 0; index < keyframes.length; index += 1) {
+        if (keyframes[index].breakHandle) breakHandleCount += 1;
+        if (keyframes[index].lockHandle) lockHandleCount += 1;
       }
       const toolBarState: Partial<ToolBarState> = {
-        breakHandle: breakHandleCount === bezierHandles.length ? true : false,
+        breakHandle: breakHandleCount === keyframes.length ? true : false,
         unifyHandle: breakHandleCount === 0 ? true : false,
-        lockHandle: lockHandleCount === bezierHandles.length ? true : false,
+        lockHandle: lockHandleCount === keyframes.length ? true : false,
         freeHandle: lockHandleCount === 0 ? true : false,
       };
       const args = { selectedKeyframes: keyframes, ...toolBarState };
@@ -42,17 +41,17 @@ const GraphWrapper: FunctionComponent<{}> = () => {
 
   return (
     <Fragment>
-      {curveEditorData?.map((graph, boneIndex) => {
-        const { boneName, x, y, z } = graph;
+      {curveEditorData?.map((bone, boneIndex) => {
+        const { boneName, x, y, z } = bone;
         return (
           <Fragment key={`${boneName}_${boneIndex}`}>
-            {[x, y, z].map((values, xyzIndex) => (
+            {[x, y, z].map((values, axisIndex) => (
               <Graph
-                key={`${boneName}_${boneIndex * 3 + xyzIndex}_${xyzIndex}`}
+                key={`${boneName}_${boneIndex * 3 + axisIndex}_${axisIndex}`}
+                axisIndex={axisIndex}
                 boneName={boneName}
-                boneIndex={boneIndex * 3 + xyzIndex}
+                boneIndex={boneIndex * 3 + axisIndex}
                 values={values}
-                xyzIndex={xyzIndex}
               />
             ))}
           </Fragment>

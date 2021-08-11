@@ -3,15 +3,15 @@ import { KeyframeValue } from "types/curveEditor";
 import Keyframe from "./Keyframe";
 
 interface Props {
+  axisIndex: number;
   boneIndex: number;
   boneName: string;
   values: KeyframeValue[];
-  xyzIndex: number;
 }
 
 const KeyframeGroup: FunctionComponent<Props> = (props) => {
-  const { boneIndex, boneName, values, xyzIndex } = props;
-  const xyzType = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
+  const { axisIndex, boneIndex, boneName, values } = props;
+  const axisType = axisIndex === 0 ? "x" : axisIndex === 1 ? "y" : "z";
 
   return (
     <g>
@@ -20,13 +20,13 @@ const KeyframeGroup: FunctionComponent<Props> = (props) => {
         return (
           <Keyframe
             key={`${keyframe.x}_${keyframe.y}`}
+            axisType={axisType}
             boneIndex={boneIndex}
             boneName={boneName}
             breakHandle={breakHandle}
             keyframeIndex={keyframeIndex}
             keyframeValue={keyframeValue}
             lockHandle={lockHandle}
-            xyzType={xyzType}
           />
         );
       })}
