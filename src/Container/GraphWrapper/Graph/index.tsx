@@ -5,11 +5,11 @@ import KeyframeGroup from "./KeyframeGroup";
 
 interface Props {
   axisIndex: number;
-  values: KeyframeValue[];
+  axisValue: KeyframeValue[];
 }
 
 const Graph: FunctionComponent<Props> = (props) => {
-  const { axisIndex, values } = props;
+  const { axisIndex, axisValue } = props;
   const color =
     axisIndex % 3 === 0 ? "red" : axisIndex % 3 === 1 ? "green" : "blue";
   const graphRef = useRef<SVGGElement>(null);
@@ -29,9 +29,9 @@ const Graph: FunctionComponent<Props> = (props) => {
         changeGraphTranslate={changeGraphTranslate}
         color={color}
         graphRef={graphRef}
-        values={values}
+        axisValue={axisValue}
       />
-      <KeyframeGroup axisIndex={axisIndex} values={values} />
+      <KeyframeGroup axisIndex={axisIndex} axisValue={axisValue} />
     </g>
   );
 };

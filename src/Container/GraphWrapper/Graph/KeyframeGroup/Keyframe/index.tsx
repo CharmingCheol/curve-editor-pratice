@@ -120,7 +120,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
       setSelectedKeyframe(false);
     };
     if (!clickedTarget) return setDeselectedEffect();
-    const { x, y } = keyframeValue.keyframe;
+    const { x } = keyframeValue.keyframe;
     const isClickedMe =
       clickedTarget.axisIndex === axisIndex &&
       clickedTarget.coordinates?.x === x;

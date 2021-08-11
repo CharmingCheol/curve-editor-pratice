@@ -4,16 +4,16 @@ import Keyframe from "./Keyframe";
 
 interface Props {
   axisIndex: number;
-  values: KeyframeValue[];
+  axisValue: KeyframeValue[];
 }
 
 const KeyframeGroup: FunctionComponent<Props> = (props) => {
-  const { axisIndex, values } = props;
+  const { axisIndex, axisValue } = props;
   const axisType = axisIndex % 3 === 0 ? "x" : axisIndex % 3 === 1 ? "y" : "z";
 
   return (
     <g>
-      {values.map((keyframeValue, keyframeIndex) => {
+      {axisValue.map((keyframeValue, keyframeIndex) => {
         const { breakHandle, keyframe, lockHandle } = keyframeValue;
         return (
           <Keyframe

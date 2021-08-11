@@ -27,11 +27,11 @@ interface Props {
   changeGraphTranslate: (cursor: Coordinates) => void;
   color: string;
   graphRef: RefObject<SVGGElement>;
-  values: KeyframeValue[];
+  axisValue: KeyframeValue[];
 }
 
 const CurveLine: FunctionComponent<Props> = (props) => {
-  const { axisIndex, changeGraphTranslate, color, graphRef, values } = props;
+  const { axisIndex, changeGraphTranslate, color, graphRef, axisValue } = props;
   const dispatch = useDispatch();
   const isAlreadySelectedCurve = useRef(false);
   const curveData = useRef<KeyframeValue[]>();
@@ -129,7 +129,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
         dragType: "dragend",
       });
       if (axisIndexes) {
-        const { x, y } = values[0].keyframe;
+        const { x, y } = axisValue[0].keyframe;
         const scaleX = Scale.getScaleX();
         const scaleY = Scale.getScaleY();
         const invertX = scaleX.invert;
@@ -150,6 +150,7 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   // 커브라인 clicked state 변경
   useEffect(() => {
     if (!clickedTarget || !curveData.current) return;
+    console.log("curve", clickedTarget);
     const isClickedMe =
       clickedTarget.targetType === "curveLine" &&
       clickedTarget.axisIndex === axisIndex;
@@ -184,10 +185,10 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   }, [axisIndex, clickedTarget, registerCurveLineObserver, axisType]);
 
   useEffect(() => {
-    curveData.current = _.cloneDeep(values);
+    curveData.current = _.cloneDeep(axisValue);
     setChangeCurveData((prev) => prev + 1);
     setSelectedCurve(false);
-  }, [values]);
+  }, [axisValue]);
 
   const pathShapes = useMemo(() => {
     const scaleX = Scale.getScaleX();

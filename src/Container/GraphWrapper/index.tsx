@@ -49,7 +49,7 @@ const GraphWrapper: FunctionComponent<{}> = () => {
               <Graph
                 key={`${transformIndex * 3 + axisIndex}_${axisIndex}`}
                 axisIndex={transformIndex * 3 + axisIndex}
-                values={axisValue}
+                axisValue={axisValue}
               />
             ))}
           </Fragment>
