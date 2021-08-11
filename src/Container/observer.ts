@@ -38,8 +38,6 @@ interface RegisterCurveLine {
 
 interface RegisterBezierHandle {
   call: (params: BezierHandleParams) => SelectedBezierHandle[];
-  breakHandle: boolean;
-  lockHandle: boolean;
 }
 
 class Observer {
@@ -140,7 +138,6 @@ class Observer {
     const draggedBezierHandles = this.bezierHandles
       .map((bezierHandle) => bezierHandle.call(params))
       .flat();
-    console.log("draggedBezierHandles", draggedBezierHandles);
     const clasifiedBezierHandles: ClassifiedMarker[] = [];
     for (let index = 0; index < draggedBezierHandles.length; index += 1) {
       const { axisIndex, ...others } = draggedBezierHandles[index];

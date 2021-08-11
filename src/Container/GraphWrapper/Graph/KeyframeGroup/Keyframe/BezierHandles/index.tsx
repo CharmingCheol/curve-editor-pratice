@@ -45,8 +45,6 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
   useEffect(() => {
     if (!selectedKeyframes) return;
     Observer.registerBezierHandle({
-      breakHandle: breakHandle,
-      lockHandle: lockHandle,
       call: (params) => {
         const scaleX = Scale.getScaleX();
         const scaleY = Scale.getScaleY();

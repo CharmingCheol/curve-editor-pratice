@@ -33,7 +33,7 @@ interface Props {
 const CurveLine: FunctionComponent<Props> = (props) => {
   const { axisIndex, changeGraphTranslate, color, graphRef, axisValue } = props;
   const dispatch = useDispatch();
-  const isAlreadySelectedCurve = useRef(false);
+  const isAlreadySelected = useRef(false);
   const curveData = useRef<KeyframeValue[]>();
 
   const [changeCurveData, setChangeCurveData] = useState(0);
@@ -150,36 +150,31 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   // 커브라인 clicked state 변경
   useEffect(() => {
     if (!clickedTarget || !curveData.current) return;
-    console.log("curve", clickedTarget);
+    const setSelectedEffect = () => {
+      isAlreadySelected.current = true;
+      registerCurveLineObserver();
+      setSelectedCurve(true);
+    };
     const isClickedMe =
       clickedTarget.targetType === "curveLine" &&
       clickedTarget.axisIndex === axisIndex;
     const isClickedKeyframe =
       clickedTarget.targetType === "keyframe" &&
       clickedTarget.axisIndex === axisIndex;
+    const selectedCondition = isClickedMe || isClickedKeyframe;
     if (clickedTarget.ctrl) {
-      if (isClickedMe || isClickedKeyframe || isAlreadySelectedCurve.current) {
-        isAlreadySelectedCurve.current = true;
-        registerCurveLineObserver();
-        setSelectedCurve(true);
-      }
-    } else if (isClickedMe || isClickedKeyframe) {
-      isAlreadySelectedCurve.current = true;
-      registerCurveLineObserver();
-      setSelectedCurve(true);
+      if (selectedCondition || isAlreadySelected.current) setSelectedEffect();
+    } else if (selectedCondition) {
+      setSelectedEffect();
     } else if (clickedTarget.alt && clickedTarget.coordinates) {
       const times = curveData.current.map(({ keyframe }) => keyframe.x);
       const binaryIndex = fnGetBinarySearch({
         collection: times,
         index: clickedTarget.coordinates.x,
       });
-      if (binaryIndex !== -1) {
-        isAlreadySelectedCurve.current = true;
-        registerCurveLineObserver();
-        setSelectedCurve(true);
-      }
+      if (binaryIndex !== -1) setSelectedEffect();
     } else {
-      isAlreadySelectedCurve.current = false;
+      isAlreadySelected.current = false;
       setSelectedCurve(false);
     }
   }, [axisIndex, clickedTarget, registerCurveLineObserver, axisType]);
@@ -187,7 +182,6 @@ const CurveLine: FunctionComponent<Props> = (props) => {
   useEffect(() => {
     curveData.current = _.cloneDeep(axisValue);
     setChangeCurveData((prev) => prev + 1);
-    setSelectedCurve(false);
   }, [axisValue]);
 
   const pathShapes = useMemo(() => {

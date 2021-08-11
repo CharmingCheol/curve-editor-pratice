@@ -110,31 +110,29 @@ const Keyframe: FunctionComponent<Props> = (props) => {
 
   // 다른 curve line이나 keyframe 클릭 시, 선택 유지 및 해제 적용
   useEffect(() => {
+    if (!clickedTarget) return;
     const setSelectedEffect = () => {
       isAlreadySelected.current = true;
       registerKeyframeObserver();
       setSelectedKeyframe(true);
     };
-    const setDeselectedEffect = () => {
-      isAlreadySelected.current = false;
-      setSelectedKeyframe(false);
-    };
-    if (!clickedTarget) return setDeselectedEffect();
-    const { x } = keyframeValue.keyframe;
     const isClickedMe =
       clickedTarget.axisIndex === axisIndex &&
-      clickedTarget.coordinates?.x === x;
+      clickedTarget.coordinates?.x === keyframeValue.keyframe.x;
     const isClickedCurveLine =
       clickedTarget.targetType === "curveLine" &&
       clickedTarget.axisIndex === axisIndex;
-    const isAltClick = clickedTarget.alt && clickedTarget.coordinates?.x === x;
+    const isAltClick =
+      clickedTarget.alt &&
+      clickedTarget.coordinates?.x === keyframeValue.keyframe.x;
     const selectedCondition = isClickedMe || isClickedCurveLine;
     if (clickedTarget.ctrl) {
       if (selectedCondition || isAlreadySelected.current) setSelectedEffect();
     } else if (selectedCondition || isAltClick) {
       setSelectedEffect();
     } else {
-      setDeselectedEffect();
+      isAlreadySelected.current = false;
+      setSelectedKeyframe(false);
     }
   }, [
     registerKeyframeObserver,
