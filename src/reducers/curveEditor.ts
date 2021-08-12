@@ -85,8 +85,8 @@ export const curveEditor = (
       Observer.clearKeyframeObserver();
       return produce(state, (draft) => {
         // x, y, z중에 해당되는 value 가져오기
-        const getAmongXYZ = (lineIndex: number, xyzIndex: number) => {
-          const xyz = draft.curveEditorData[lineIndex];
+        const getAmongAxis = (transformIndex: number, xyzIndex: number) => {
+          const xyz = draft.curveEditorData[transformIndex];
           switch (xyzIndex) {
             case 0:
               return xyz.x;
@@ -97,18 +97,18 @@ export const curveEditor = (
           }
         };
         // 동일한 time에 키프레임이 있을 경우 제거
-        const setKeyframeDelete = (
-          lineIndex: number,
-          timeIndex: number,
+        const setEmptyKeyframe = (
+          transformIndex: number,
           keyframeIndex: number,
+          time: number,
           xyzChar: "x" | "y" | "z"
         ) => {
-          const xyz = draft.curveEditorData[lineIndex][xyzChar];
+          const xyz = draft.curveEditorData[transformIndex][xyzChar];
           for (let index = 0; index < xyz.length; index += 1) {
             const target = xyz[index].keyframe;
             if (
-              index !== keyframeIndex && // 자신의 키프레임이 아니고
-              target.x === timeIndex && // timeIndex는 같으면서
+              index !== keyframeIndex && // 자신의 keyframe index 아니고
+              target.x === time && // time는 같으면서
               target.y !== 0 // y값이 0이 아닌 경우
             ) {
               xyz[index].keyframe = { x: 0, y: 0, keyframeIndex: 0 };
@@ -119,25 +119,28 @@ export const curveEditor = (
         // 키프레임 데이터 업데이트
         action.payload.keyframes.forEach((keyframe) => {
           const { markerData } = keyframe;
-          const axisIndex = (keyframe.axisIndex / 3) | 0;
+          const transformIndex = (keyframe.axisIndex / 3) | 0;
           const xyzIndex = keyframe.axisIndex % 3;
-          const values = getAmongXYZ(axisIndex, xyzIndex);
+          const values = getAmongAxis(transformIndex, xyzIndex);
           const xyzChar = xyzIndex === 0 ? "x" : xyzIndex === 1 ? "y" : "z";
           if (values) {
             markerData.forEach(({ keyframeIndex, x, y }) => {
-              const leftHandleY = values[keyframeIndex].handles.left.y;
-              const rightHandleY = values[keyframeIndex].handles.right.y;
-              const keyframeY = values[keyframeIndex].keyframe.y;
-              values[keyframeIndex].keyframe = { keyframeIndex, x, y };
-              values[keyframeIndex].handles.left = {
-                x: x - 0.3,
+              const keyframeValue = values[keyframeIndex];
+              const { x: keyframeX, y: keyframeY } = keyframeValue.keyframe;
+              const { x: leftHandleX, y: leftHandleY } =
+                keyframeValue.handles.left;
+              const { x: rightHandleX, y: rightHandleY } =
+                keyframeValue.handles.right;
+              keyframeValue.keyframe = { keyframeIndex, x, y };
+              keyframeValue.handles.left = {
+                x: leftHandleX - (keyframeX - x),
                 y: leftHandleY - (keyframeY - y),
               };
-              values[keyframeIndex].handles.right = {
-                x: x + 0.3,
+              keyframeValue.handles.right = {
+                x: rightHandleX - (keyframeX - x),
                 y: rightHandleY - (keyframeY - y),
               };
-              setKeyframeDelete(axisIndex, x, keyframeIndex, xyzChar);
+              setEmptyKeyframe(transformIndex, keyframeIndex, x, xyzChar);
             });
             values.sort((a, b) => a.keyframe.x - b.keyframe.x);
             const filterdValues = values.filter(
@@ -146,7 +149,7 @@ export const curveEditor = (
             for (let index = 0; index < filterdValues.length; index += 1) {
               filterdValues[index].keyframe.keyframeIndex = index;
             }
-            draft.curveEditorData[axisIndex][xyzChar] = filterdValues;
+            draft.curveEditorData[transformIndex][xyzChar] = filterdValues;
           }
         });
       });

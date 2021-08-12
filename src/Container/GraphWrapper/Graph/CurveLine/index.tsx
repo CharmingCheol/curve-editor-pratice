@@ -79,14 +79,24 @@ const CurveLine: FunctionComponent<Props> = (props) => {
               const targetIndex = curveData.current.findIndex(
                 ({ keyframe }) => keyframe.keyframeIndex === keyframeIndex
               );
-              curveData.current[targetIndex].keyframe = {
+              const keyframeValue = curveData.current[targetIndex];
+              const { x: keyframeX, y: keyframeY } = keyframeValue.keyframe;
+              const { x: leftHandleX, y: leftHandleY } =
+                keyframeValue.handles.left;
+              const { x: rightHandleX, y: rightHandleY } =
+                keyframeValue.handles.right;
+              keyframeValue.keyframe = {
                 x: x,
                 y: y,
                 keyframeIndex: keyframeIndex,
               };
-              curveData.current[targetIndex].handles = {
-                left: { x: x - 0.3, y: y },
-                right: { x: x + 0.3, y: y },
+              keyframeValue.handles.left = {
+                x: leftHandleX - (keyframeX - x),
+                y: leftHandleY - (keyframeY - y),
+              };
+              keyframeValue.handles.right = {
+                x: rightHandleX - (keyframeX - x),
+                y: rightHandleY - (keyframeY - y),
               };
             }
             curveData.current?.sort((a, b) => a.keyframe.x - b.keyframe.x);
