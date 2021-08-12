@@ -1,4 +1,5 @@
 import React, {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -178,4 +179,4 @@ const Keyframe: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default Keyframe;
+export default memo(Keyframe);

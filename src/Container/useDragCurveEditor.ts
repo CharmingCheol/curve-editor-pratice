@@ -82,14 +82,16 @@ const useDragCurveEditor = (props: Props) => {
 
   // 드래그 이벤트 세팅
   useEffect(() => {
+    const dragged = (event: any) => handleDragging(event);
+    const throttleedThing = _.throttle(dragged, throttleTime);
     const dragBehavior = d3
       .drag()
       .on("start", handleDragStart)
-      .on(
-        "drag",
-        _.throttle((event) => handleDragging(event), throttleTime)
-      )
-      .on("end", handleDragEnd);
+      .on("drag", throttleedThing)
+      .on("end", (event) => {
+        handleDragEnd(event);
+        throttleedThing.cancel();
+      });
     d3.select(ref.current).call(dragBehavior as any);
   }, [handleDragEnd, handleDragStart, handleDragging, ref, throttleTime]);
 };
