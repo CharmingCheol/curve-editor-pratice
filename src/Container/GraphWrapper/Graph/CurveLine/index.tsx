@@ -98,16 +98,28 @@ const CurveLine: FunctionComponent<Props> = (props) => {
                 ({ keyframe }) => keyframe.keyframeIndex === keyframeIndex
               );
               if (handleType) {
+                const currentKeyframeX =
+                  curveData.current[targetIndex].keyframe.x;
                 const prevKeyframeX =
                   curveData.current[targetIndex - 1]?.keyframe.x;
                 const nextKeyframeX =
                   curveData.current[targetIndex + 1]?.keyframe.x;
-                const isContained = prevKeyframeX <= x && x <= nextKeyframeX;
-                if (!prevKeyframeX || !nextKeyframeX || isContained) {
-                  curveData.current[targetIndex].handles[handleType] = {
-                    x,
-                    y,
-                  };
+                curveData.current[targetIndex].handles[handleType].y = y;
+                // 첫번째 키프레임의 handle을 드래그 한 경우
+                if (prevKeyframeX === undefined) {
+                  if (currentKeyframeX - 1 <= x && x <= nextKeyframeX) {
+                    curveData.current[targetIndex].handles[handleType].x = x;
+                  }
+                }
+                // 마지막 키프레임의 handle을 드래그 한 경우
+                else if (nextKeyframeX === undefined) {
+                  if (prevKeyframeX <= x && x <= currentKeyframeX + 1) {
+                    curveData.current[targetIndex].handles[handleType].x = x;
+                  }
+                } else {
+                  if (prevKeyframeX <= x && x <= currentKeyframeX) {
+                    curveData.current[targetIndex].handles[handleType].x = x;
+                  }
                 }
               }
             }
