@@ -227,9 +227,8 @@ const CurveLine: FunctionComponent<Props> = (props) => {
 
   return (
     <path
-      className={cx("curve", { selected: selectedCurve })}
+      className={cx("curve", axisType, { selected: selectedCurve })}
       fill="none"
-      stroke={color}
       d={pathShapes}
       onClick={handleClickCurveLine}
     />

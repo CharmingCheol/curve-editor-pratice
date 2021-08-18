@@ -169,7 +169,7 @@ const Keyframe: FunctionComponent<Props> = (props) => {
         />
       )}
       <circle
-        r={1.5}
+        r={2.5}
         cx={circleXY.x}
         cy={circleXY.y}
         className={cx({ clicked: selectedkeyframe })}

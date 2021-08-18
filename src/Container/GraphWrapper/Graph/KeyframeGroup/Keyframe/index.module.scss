@@ -1,6 +1,9 @@
 circle {
-  fill: white;
+  fill: #d3d3d3;
+  stroke: #202122;
+  stroke-width: 0.5;
   &.clicked {
-    fill: gray;
+    fill: #ffffff;
+    stroke: #0f88ff;
   }
 }

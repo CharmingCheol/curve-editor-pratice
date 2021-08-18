@@ -1,6 +1,11 @@
-.curve {
-  stroke-opacity: 0.3;
-  &.selected {
-    stroke-opacity: 1;
-  }
+.x {
+  stroke: #fd6756;
+}
+
+.y {
+  stroke: #35bd5b;
+}
+
+.z {
+  stroke: #4493f1;
 }

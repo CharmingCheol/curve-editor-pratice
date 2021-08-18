@@ -1,4 +1,10 @@
-import React, { useEffect, useState, Fragment, FunctionComponent } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+  Fragment,
+  FunctionComponent,
+} from "react";
 import { useSelector } from "reducers";
 import {
   Coordinates,
@@ -30,9 +36,21 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
     props;
   const [leftXY, setLeftXY] = useState({ ...handlesData.left });
   const [rightXY, setRightXY] = useState({ ...handlesData.right });
+  const [handleSelected, setHandleSelected] = useState({
+    left: false,
+    right: false,
+  });
   const selectedKeyframes = useSelector(
     (state) => state.curveEditor.selectedKeyframes
   );
+
+  const changeHandleSelected = useCallback((handleType: "left" | "right") => {
+    const nextState =
+      handleType === "left"
+        ? { left: true, right: false }
+        : { right: true, left: false };
+    setHandleSelected(nextState);
+  }, []);
 
   const setClampX = (params: SetClampX) => {
     const { locked, originHandleX, keyframeX, valueX, handleType } = params;
@@ -109,13 +127,21 @@ const BezierHandles: FunctionComponent<Props> = (props) => {
   return (
     <Fragment>
       <BezierHandleForm
+        breakHandle={breakHandle}
+        changeHandleSelected={changeHandleSelected}
+        handleSelected={handleSelected.left}
         handleType="left"
         handleXY={leftXY}
+        lockHandle={lockHandle}
         keyframeXY={keyframeData}
       />
       <BezierHandleForm
+        breakHandle={breakHandle}
+        changeHandleSelected={changeHandleSelected}
+        handleSelected={handleSelected.right}
         handleType="right"
         handleXY={rightXY}
+        lockHandle={lockHandle}
         keyframeXY={keyframeData}
       />
     </Fragment>
