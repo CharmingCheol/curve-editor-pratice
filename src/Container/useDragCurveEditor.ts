@@ -10,6 +10,7 @@ interface DragProps {
 }
 
 interface Props {
+  onDragStart?: () => void;
   onDragging: (dragProps: DragProps) => void;
   onDragEnd: (dragProps: DragProps) => void;
   ref: RefObject<Element>;
@@ -19,6 +20,7 @@ interface Props {
 
 const useDragCurveEditor = (props: Props) => {
   const {
+    onDragStart,
     onDragging,
     onDragEnd,
     ref,
@@ -53,8 +55,9 @@ const useDragCurveEditor = (props: Props) => {
   const handleDragStart = useCallback(
     (event: any) => {
       getCursorGapXY(event);
+      if (onDragStart) onDragStart();
     },
-    [getCursorGapXY]
+    [getCursorGapXY, onDragStart]
   );
 
   // 드래그 이벤트 진행
